@@ -19,6 +19,11 @@
 #
 
 import datetime
+import tempfile, urllib, urllib2
+
+# fritzbox
+import access
+import multipart
 
 
 class PhonebookException(Exception):
@@ -118,13 +123,24 @@ class Phonebooks(object):
     outfile.write("</phonebooks>\n")
       
   # sid: Login session ID
-  # name: phonebook name
-  def upload(self, sid, name):
-    # TODO
-    # f = NamedTemporaryFile(mode="w")
-    # self.save(f)
+  # phonebookid: phonebook id, 0 for main phone book
+  def upload(self, session, phonebookid=0):
+    tmpfile = tempfile.NamedTemporaryFile(mode="w")
+    self.save(tmpfile)
+    tmpfile.flush()
+    
     # upload
-    pass
+    sid = session.get_sid()
+    form = multipart.MultiPartForm()
+    form.add_field("sid", sid)
+    form.add_field("PhonebookId", phonebookid)
+    with open(tmpfile.name, "r") as fh:
+      form.add_file("PhonebookImportFile", "book.xml", fh, "text/xml")  
+    body = str(form)
+    headers = {'Content-type': form.get_content_type(), 'Content-length': len(body)}
+    resp = session.post("/cgi-bin/firmwarecfg", headers, body)
+    data = resp.read()
+    #print data
 
 
 # Only demo code, this module is by others
