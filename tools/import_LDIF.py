@@ -23,8 +23,10 @@ import sys, argparse, re
 from datetime import datetime
 from ldif import LDIFParser
 
+# fritzbox
 sys.path.insert(0, '../fritzbox')
 import phonebook
+import access
 
 
 g_debug = False
@@ -137,9 +139,20 @@ class ParsePersons(LDIFParser):
 #
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Convert LDIF file to FritzBox adressbook XML")
-  parser.add_argument("--input", help="input file", required=True)
+  parser.add_argument("--input", help="input filename", required=True)
   parser.add_argument("--country_code", help="country code, e.g. +41", required=True)
   parser.add_argument("--vip_groups", nargs="+", help="vip group names", default=["Family"])
+
+  saveOrUpload = parser.add_mutually_exclusive_group(required=True)
+  saveOrUpload.add_argument("--upload", help="output phonebook", action="store_true", default=False)
+  saveOrUpload.add_argument("--output", help="output filename")
+
+  # upload
+  upload = parser.add_argument_group("upload")
+  upload.add_argument("--hostname", help="hostname", default="https://fritz.box")
+  upload.add_argument("--password", help="password")
+  upload.add_argument("--phonebookid", help="phonebook id", default=0)
+
   parser.add_argument('--debug', action='store_true')
   args = parser.parse_args()
 
@@ -158,6 +171,13 @@ if __name__ == "__main__":
   
   books = phonebook.Phonebooks()
   books.addPhonebook(p.phoneBook)
-  with open(args.input+".xml", "w") as outfile:
-    books.save(outfile)
+
+  if args.upload:
+    print("upload to %s..." % args.hostname)
+    session = access.Session(args.password, args.hostname)
+    books.upload(session, args.phonebookid)
+  else:
+    print("save to %s..." % args.output)
+    with open(args.output, "w") as outfile:
+      books.save(outfile)
 
