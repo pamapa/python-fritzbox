@@ -123,7 +123,8 @@ class Phonebooks(object):
     outfile.write("</phonebooks>\n")
       
   # sid: Login session ID
-  # phonebookid: phonebook id, 0 for main phone book
+  # phonebookid: 0 for main phone book
+  #              1 for next phone book in list, etc... 
   def upload(self, session, phonebookid=0):
     tmpfile = tempfile.NamedTemporaryFile(mode="w")
     self.save(tmpfile)

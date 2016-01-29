@@ -86,7 +86,14 @@ class Session(object):
       request.add_header(header, headers[header])
     request.add_data(body)
     resp = urllib2.urlopen(request)
-    if self.debug: print "done"
+    return resp
+
+  def get(self, path, query):
+    uri = "%s/%s" % (self.hostname, path)
+    if self.debug: print "post: uri=%s, query=%s" % (uri, query)
+    data = urllib.urlencode(query)
+    request = urllib2.Request(uri, data)
+    resp = urllib2.urlopen(request)
     return resp
 
 
