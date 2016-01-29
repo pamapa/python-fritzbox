@@ -3,7 +3,9 @@ Setup the Fritz!Box with python.
 
 
 ## Tools
-- Convert Thunderbird address books into Fritz!Box XML format
+- Thunderbird address books (import_LDIF.py)
+ - Convert to Fritz!Box XML format
+ - Upload to Fritz!Box
 
 
 ## Tested hardware
