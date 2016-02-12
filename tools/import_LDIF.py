@@ -154,11 +154,11 @@ if __name__ == "__main__":
 
   parser.add_argument('--debug', action='store_true')
   args = parser.parse_args()
+  g_debug = args.debug
 
   g_countryCode = args.country_code
   for vip_group in args.vip_groups:
     g_vipGroups[vip_group] = []
-  g_debug = args.debug
 
   # parse groups
   g = ParseGroups(open(args.input, "r"))

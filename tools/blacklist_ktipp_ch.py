@@ -23,14 +23,13 @@ import os, sys, argparse, re
 from BeautifulSoup import BeautifulSoup
 import urllib2
 from datetime import datetime
-import json
 
 # fritzbox
 import fritzbox.phonebook
 import fritzbox.access
 
 
-NAME_MAX_LENGTH = 200
+NAME_MAX_LENGTH = 100
 g_debug = False
 
 
@@ -187,20 +186,20 @@ def cleanup_entries(arr):
 #
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Fetch blacklist provided by ktipp.ch")
-  #parser.add_argument("--output", help="output path", default=".")
+
+  saveOrUpload = parser.add_mutually_exclusive_group(required=True)
+  saveOrUpload.add_argument("--upload", help="output phonebook", action="store_true", default=False)
+  saveOrUpload.add_argument("--output", help="output filename")
+
+  # upload
+  upload = parser.add_argument_group("upload")
+  upload.add_argument("--hostname", help="hostname", default="https://fritz.box")
+  upload.add_argument("--password", help="password")
+  upload.add_argument("--phonebookid", help="phonebook id", default=0)
+
   parser.add_argument('--debug', action='store_true')
   args = parser.parse_args()
   g_debug = args.debug
-
-#  last_update = ""
-#  json_data = None
-#  try:
-#    data = open(json_filename, "r").read()
-#    json_data = json.loads(data)
-#    last_update = json_data["last_update"]
-#    debug(last_update)
-#  except (IOError, KeyError):
-#    pass
 
   content = fetch_page(0)
   source_date = unicode(extract_str(content, "Letzte Aktualisierung:", "<", "Can't extract creation date"))
@@ -225,7 +224,16 @@ if __name__ == "__main__":
     telephony.addNumber("work", r["number"])
     contact = fritzbox.phonebook.Contact(0, person, telephony, mod_datetime)
     phoneBook.addContact(contact)
-  print(phoneBook)
 
-  sys.exit(0)
+  books = fritzbox.phonebook.Phonebooks()
+  books.addPhonebook(phoneBook)
+
+  if args.upload:
+    print("upload to %s..." % args.hostname)
+    session = fritzbox.access.Session(args.password, args.hostname)
+    books.upload(session, args.phonebookid)
+  else:
+    print("save to %s..." % args.output)
+    with open(args.output, "w") as outfile:
+      outfile.write(str(books))
 
