@@ -24,9 +24,8 @@ from datetime import datetime
 from ldif import LDIFParser
 
 # fritzbox
-sys.path.insert(0, '../fritzbox')
-import phonebook
-import access
+import fritzbox.phonebook
+import fritzbox.access
 
 
 g_debug = False
@@ -61,7 +60,7 @@ class ParseGroups(LDIFParser):
 class ParsePersons(LDIFParser):
   def __init__(self, input):
     LDIFParser.__init__(self, input)
-    self.phoneBook = phonebook.Phonebook()
+    self.phoneBook = fritzbox.phonebook.Phonebook()
 
   def handle(self, dn, entry):
     #debug(entry)
@@ -71,7 +70,7 @@ class ParsePersons(LDIFParser):
     mobile = self._normalize_number(self._get_value(entry, "mobile"))
     work = self._normalize_number(self._get_value(entry, "telephoneNumber"))
     if home and len(home) > 0 or mobile and len(mobile) > 0 or work and len(work) > 0:
-      contact = phonebook.Contact(
+      contact = fritzbox.phonebook.Contact(
         self._get_category(entry, cn),
         self._get_person(entry, cn),
         self._get_telephony(home, mobile, work),
@@ -107,7 +106,7 @@ class ParsePersons(LDIFParser):
         realName = sname
         if fname and len(fname) > 0:
           realName += ", %s" % fname
-      return phonebook.Person(realName)
+      return fritzbox.phonebook.Person(realName)
 
   def _get_telephony(self, home, mobile, work):    
     # which number has prio    
@@ -117,7 +116,7 @@ class ParsePersons(LDIFParser):
     elif mobile and len(mobile) > 0:
       mainnumber = "mobile"
 
-    telephony = phonebook.Telephony()
+    telephony = fritzbox.phonebook.Telephony()
     if home:
       prio = 1 if "home" == mainnumber else 0
       telephony.addNumber("home", home, prio)
@@ -169,12 +168,12 @@ if __name__ == "__main__":
   p = ParsePersons(open(args.input, "r"))
   p.parse()
   
-  books = phonebook.Phonebooks()
+  books = fritzbox.phonebook.Phonebooks()
   books.addPhonebook(p.phoneBook)
 
   if args.upload:
     print("upload to %s..." % args.hostname)
-    session = access.Session(args.password, args.hostname)
+    session = fritzbox.access.Session(args.password, args.hostname)
     books.upload(session, args.phonebookid)
   else:
     print("save to %s..." % args.output)
