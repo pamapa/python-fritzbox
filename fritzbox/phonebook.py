@@ -18,7 +18,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #
 
-import datetime
+from datetime import datetime
 import tempfile, urllib, urllib2
 
 # fritzbox
@@ -36,12 +36,13 @@ class Person(object):
   def __init__(self, realName, imageURL=None):
     self.realName = realName
     self.imageURL = imageURL
-  
-  def _write(self, outfile):
-    outfile.write("<person>")
-    outfile.write("<realName>%s</realName>" % self.realName.encode("ISO-8859-1"))
-    if self.imageURL: outfile.write("<imageURL>%s</imageURL>" % self.imageURL)
-    outfile.write("</person>\n")
+
+  def __str__(self):
+    ret  = "<person>"
+    ret += "<realName>%s</realName>" % self.realName.encode("ISO-8859-1")
+    if self.imageURL: ret += "<imageURL>%s</imageURL>" % self.imageURL
+    ret += "</person>"
+    return ret
 
 
 class Telephony(object):
@@ -58,15 +59,16 @@ class Telephony(object):
       raise PhonebookException("invalid type: %s" % type)
     self.numberDict[type] = (number, prio, vanity, quickdial)
 
-  def _write(self, outfile):
-    outfile.write("<telephony>")
+  def __str__(self):
+    ret = "<telephony>"
     for type in self.numberDict:
       (number, prio, vanity, quickdial) = self.numberDict[type]
-      outfile.write('<number type="%s" prio="%u"' % (type, prio))
-      if vanity: outfile.write(' vanity="%s"' % vanity)
-      if quickdial: outfile.write(' quickdial="%s"' % quickdial)
-      outfile.write('>%s</number>' % number)
-    outfile.write("</telephony>\n")
+      ret += '<number type="%s" prio="%u"' % (type, prio)
+      if vanity: ret += ' vanity="%s"' % vanity
+      if quickdial: ret += ' quickdial="%s"' % quickdial
+      ret += '>%s</number>' % number
+    ret += "</telephony>"
+    return ret
 
 
 class Contact(object):
@@ -80,15 +82,16 @@ class Contact(object):
     self.telephony = telephony
     self.mod_datetime  = mod_datetime
 
-  def _write(self, outfile):
-    outfile.write("<contact>\n")
-    outfile.write("<category>%u</category>\n" % self.category)
-    self.person._write(outfile)
-    self.telephony._write(outfile)
-    outfile.write("<services/>") # not used yet
-    outfile.write("<setup/>") # not used yet
-    if self.mod_datetime: outfile.write("<mod_time>%s</mod_time>\n" % self.mod_datetime.strftime("%s"))
-    outfile.write("</contact>\n")
+  def __str__(self):
+    ret  = "<contact>\n"
+    ret += "<category>%u</category>\n" % self.category
+    ret += "%s\n" % str(self.person)
+    ret += "%s\n" % str(self.telephony)
+    ret += "<services/>" # not used yet
+    ret += "<setup/>" # not used yet
+    if self.mod_datetime: ret += "<mod_time>%s</mod_time>\n" % self.mod_datetime.strftime("%s")
+    ret += "</contact>"
+    return ret
 
 
 class Phonebook(object):
@@ -98,45 +101,46 @@ class Phonebook(object):
   # contact: class Contact
   def addContact(self, contact):
     self.contactList.append(contact)
-    
-  def _write(self, outfile):
-    outfile.write("<phonebook>\n")
+
+  def __str__(self):
+    ret = "<phonebook>\n"
     for contact in self.contactList:
-      contact._write(outfile)
-    outfile.write("</phonebook>\n")
+      ret += "%s\n" % str(contact)
+    ret += "</phonebook>"
+    return ret
 
 
 class Phonebooks(object):
-  def __init__(self):   
+  def __init__(self):
     self.phonebookList = []
 
   # phonebook: class Phonebook
   def addPhonebook(self, phonebook):
     self.phonebookList.append(phonebook)
 
-  # outfile: file handle
-  def save(self, outfile):
-    outfile.write('<?xml version="1.0" encoding="iso-8859-1"?>\n')
-    outfile.write("<phonebooks>\n")
+  def __str__(self):
+    ret  = '<?xml version="1.0" encoding="iso-8859-1"?>\n'
+    ret += "<phonebooks>\n"
     for book in self.phonebookList:
-      book._write(outfile)
-    outfile.write("</phonebooks>\n")
-      
+      ret += "%s\n" % str(book)
+    ret += "</phonebooks>"
+    return ret
+
   # sid: Login session ID
   # phonebookid: 0 for main phone book
-  #              1 for next phone book in list, etc... 
+  #              1 for next phone book in list, etc...
   def upload(self, session, phonebookid=0):
     tmpfile = tempfile.NamedTemporaryFile(mode="w")
-    self.save(tmpfile)
+    tmpfile.write(str(self))
     tmpfile.flush()
-    
+
     # upload
     sid = session.get_sid()
     form = multipart.MultiPartForm()
     form.add_field("sid", sid)
     form.add_field("PhonebookId", phonebookid)
     with open(tmpfile.name, "r") as fh:
-      form.add_file("PhonebookImportFile", "book.xml", fh, "text/xml")  
+      form.add_file("PhonebookImportFile", "book.xml", fh, "text/xml")
     body = str(form)
     headers = {'Content-type': form.get_content_type(), 'Content-length': len(body)}
     resp = session.post("/cgi-bin/firmwarecfg", headers, body)
@@ -144,9 +148,9 @@ class Phonebooks(object):
     #print data
 
 
-# Only demo code, this module is by others
+# Only demo code, this module is used elsewhere
 if __name__ == "__main__":
-  mod_datetime = datetime.datetime.now()
+  mod_datetime = datetime.now()
 
   telephony1 = Telephony()
   telephony1.addNumber("home", "+12345678")
@@ -155,7 +159,7 @@ if __name__ == "__main__":
   telephony2 = Telephony()
   telephony2.addNumber("work", "+1122334455")
   contact2 = Contact(1, Person("Mr. Y"), telephony2, mod_datetime)
-  
+
   book = Phonebook()
   book.addContact(contact1)
   book.addContact(contact2)
@@ -163,5 +167,5 @@ if __name__ == "__main__":
   books = Phonebooks()
   books.addPhonebook(book)
   with open("test.xml", "w") as outfile:
-    books.save(outfile)
+    outfile.write(str(books))
 

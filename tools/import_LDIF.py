@@ -75,7 +75,7 @@ class ParsePersons(LDIFParser):
         self._get_category(entry, cn),
         self._get_person(entry, cn),
         self._get_telephony(home, mobile, work),
-        self._get_services(entry)
+        service=self._get_services(entry)
       )
       self.phoneBook.addContact(contact)
 
@@ -179,5 +179,5 @@ if __name__ == "__main__":
   else:
     print("save to %s..." % args.output)
     with open(args.output, "w") as outfile:
-      books.save(outfile)
+      outfile.write(str(books))
 

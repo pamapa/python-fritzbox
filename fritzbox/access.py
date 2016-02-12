@@ -43,8 +43,7 @@ class Session(object):
       uri = "%s/login_sid.lua?sid=%s" % (self.hostname, self.sid)
     if self.debug: print "uri: " + uri
 
-    # TODO: improve me
-    # avoid invalid certificate
+    # fritzbox uses self signed certificates :-(
     ssl._create_default_https_context = ssl._create_unverified_context
 
     resp = urllib2.urlopen(uri)
@@ -53,12 +52,12 @@ class Session(object):
 
     doc = ET.fromstring(data)
     self.sid = doc.find("SID").text
-    if self.sid != "0000000000000000": 
+    if self.sid != "0000000000000000":
       return self.sid
 
     challenge = doc.find("Challenge").text
     if self.debug: print "challenge: " + challenge
-    
+
     text = "%s-%s" % (challenge, self.password)
     text = text.encode("utf-16le")
     response = "%s-%s" % (challenge, hashlib.md5(text).hexdigest())
@@ -69,11 +68,11 @@ class Session(object):
     resp = urllib2.urlopen(uri, post_data)
     data = resp.read()
     if self.debug: print "data from login: %s %s" % (resp.info(), data)
-    
+
     doc = ET.fromstring(data)
     self.sid = doc.find("SID").text
     if self.debug: print "found sid: %s" % self.sid
-    
+
     if self.sid == "0000000000000000": raise SessionException("login failed")
     return self.sid
 
