@@ -187,7 +187,7 @@ if __name__ == "__main__":
   upload = parser.add_argument_group("upload")
   upload.add_argument("--hostname", help="hostname", default="https://fritz.box")
   upload.add_argument("--password", help="password")
-  upload.add_argument("--phonebookid", help="phonebook id", default=0)
+  upload.add_argument("--phonebookid", help="phonebook id", default=1)
 
   args = parser.parse_args()
   g_debug = args.debug
@@ -208,7 +208,7 @@ if __name__ == "__main__":
     sys.exit(0)
 
   mod_datetime = datetime.now()
-  phoneBook = fritzbox.phonebook.Phonebook()
+  phoneBook = fritzbox.phonebook.Phonebook(name="ktipp")
   for r in result:
     person = fritzbox.phonebook.Person(r["name"])
     telephony = fritzbox.phonebook.Telephony()

@@ -23,8 +23,6 @@ import urlparse, urllib2, urllib, hashlib
 import xml.etree.ElementTree as ET
 import ssl
 
-CAFILE_PATH="/tmp" # TODO use better location
-
 
 class SessionException(Exception):
   pass
@@ -32,12 +30,12 @@ class SessionException(Exception):
 
 class Session(object):
 
-  def __init__(self, password, url="https://fritz.box", usecafile=True, debug=False):
+  def __init__(self, password, url="https://fritz.box", cafile=None, debug=False):
     self.password = password
     self.url = urlparse.urlparse(url)
     self.sid = None
     self.debug = debug
-    self.cafile = "%s.ca" % os.path.join(CAFILE_PATH, self.url.hostname) if usecafile else None
+    self.cafile = cafile
 
 
   def save_certificate(self):
@@ -56,10 +54,12 @@ class Session(object):
       uri = "%s/login_sid.lua?sid=%s" % (self.url.geturl(), self.sid)
     if self.debug: print "uri: " + uri
 
-    if not self.cafile or not os.path.exists(self.cafile):
+    if not self.cafile:
       # fritzbox uses self signed certificates :-(
-      print("Warning: Using unverified SSL. Save the certificate of your firtzbox to be secure!")
+      print("Warning: Using unverified SSL. Save the certificate of your firtzbox locally first!")
       ssl._create_default_https_context = ssl._create_unverified_context
+    else:
+      if self.debug: print "cafile: " + self.cafile
 
     resp = urllib2.urlopen(uri, cafile=self.cafile)
     data = resp.read()
@@ -94,21 +94,23 @@ class Session(object):
 
   def post(self, path, headers, body):
     uri = "%s/%s" % (self.url.geturl(), path)
-    if self.debug: print "post: uri=%s, headers=%s, body=%s" % (uri, headers, body)
-    request = urllib2.Request(uri, cafile=self.cafile)
+    if self.debug: print "post: uri=%s, headers=%s" % (uri, headers)
+    request = urllib2.Request(uri)
     for header in headers:
       request.add_header(header, headers[header])
     request.add_data(body)
-    resp = urllib2.urlopen(request)
+    resp = urllib2.urlopen(request, cafile=self.cafile)
+    if self.debug: print "resp: %s" % resp.info()
     return resp
 
 
   def get(self, path, query):
     uri = "%s/%s" % (self.url.geturl(), path)
-    if self.debug: print "post: uri=%s, query=%s" % (uri, query)
+    if self.debug: print "get: uri=%s, query=%s" % (uri, query)
     data = urllib.urlencode(query)
-    request = urllib2.Request(uri, data, cafile=self.cafile)
-    resp = urllib2.urlopen(request)
+    request = urllib2.Request(uri, data)
+    resp = urllib2.urlopen(request, cafile=self.cafile)
+    if self.debug: print "resp: %s" % resp.info()
     return resp
 
 
@@ -117,7 +119,7 @@ if __name__ == "__main__":
   parser.add_argument("--password", help="password", required=True)
   args = parser.parse_args()
 
-  session = Session(args.password, usecafile=False)
+  session = Session(args.password)
   #session.save_certificate()
   print session.get_sid()
 

@@ -95,7 +95,8 @@ class Contact(object):
 
 
 class Phonebook(object):
-  def __init__(self):
+  def __init__(self, owner=0, name=None):
+    self.name = name
     self.contactList = []
 
   # contact: class Contact
@@ -103,10 +104,11 @@ class Phonebook(object):
     self.contactList.append(contact)
 
   def __str__(self):
-    ret = "<phonebook>\n"
+    if self.name: ret = '<phonebook name="%s">\n' % self.name
+    else: ret = '<phonebook>\n'
     for contact in self.contactList:
-      ret += "%s\n" % str(contact)
-    ret += "</phonebook>"
+      ret += '%s\n' % str(contact)
+    ret += '</phonebook>'
     return ret
 
 
@@ -144,8 +146,13 @@ class Phonebooks(object):
     body = str(form)
     headers = {'Content-type': form.get_content_type(), 'Content-length': len(body)}
     resp = session.post("/cgi-bin/firmwarecfg", headers, body)
-    data = resp.read()
-    #print data
+    html = resp.read()
+    if html.find("Das Telefonbuch der FRITZ!Box wurde wiederhergestellt.") != 0:
+      pass
+    elif html.find("Beim Wiederherstellen des Telefonbuchs ist ein Fehler aufgetreten.") != 0:
+      print "Error: uploading failed"
+    else:
+      print "Warning: unknown answer:\n%s" % html
 
 
 # Only demo code, this module is used elsewhere
@@ -166,6 +173,5 @@ if __name__ == "__main__":
 
   books = Phonebooks()
   books.addPhonebook(book)
-  with open("test.xml", "w") as outfile:
-    outfile.write(str(books))
+  print str(books)
 

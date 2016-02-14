@@ -18,12 +18,17 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #
 
-import sys, argparse
+import os, sys, argparse
+import urlparse
 
 # fritzbox module
 import fritzbox.phonebook
 import fritzbox.access
 import fritzbox.LDIF
+
+
+CAFILE_PATH="/var/local/python-fritzbox"
+
 
 #
 # main
@@ -49,6 +54,7 @@ if __name__ == "__main__":
   uploadOrCafile.add_argument("--hostname", help="hostname", default="https://fritz.box:443")
   uploadOrCafile.add_argument("--password", help="password")
   uploadOrCafile.add_argument("--phonebook_id", help="phonebook id", default=0)
+  uploadOrCafile.add_argument("--usecafile", help="use stored certificate to verify secure connection", action="store_true", default=True)
 
   args = parser.parse_args()
 
@@ -60,16 +66,23 @@ if __name__ == "__main__":
     if args.kind == "LDIF":
       ldif = fritzbox.LDIF.Import()
       books = ldif.get_books(args.input, args.country_code, vipGroups)
-  if args.upload:
-    print("upload phonebook to %s..." % args.hostname)
-    session = fritzbox.access.Session(args.password, url=args.hostname, debug=args.debug)
-    books.upload(session, args.phonebook_id)
-  elif args.save:
+
+  cafile = None
+  if args.hostname and args.usecafile:
+    tmp = urlparse.urlparse(args.hostname).hostname.replace(".", "_")
+    cafile = "%s.ca" % os.path.join(CAFILE_PATH, tmp)
+
+  if args.save:
     print("save phonebook to %s..." % args.save)
     with open(args.save, "w") as f:
       f.write(str(books))
   elif args.cafile:
     print("save certificate")
-    session = fritzbox.access.Session(args.password, url=args.hostname, debug=args.debug)
+    session = fritzbox.access.Session(args.password, url=args.hostname, cafile=cafile, debug=args.debug)
     session.save_certificate()
+  elif args.upload:
+    print("upload phonebook to %s..." % args.hostname)
+    session = fritzbox.access.Session(args.password, url=args.hostname, cafile=cafile, debug=args.debug)
+    #print session.get_sid()
+    books.upload(session, args.phonebook_id)
 
