@@ -9,10 +9,16 @@ sudo apt-get install python python-beautifulsoup python-ldap
 
 
 ## Tools
-- import_LDIF.py: Import Thunderbird address books
+- fritzboxutil.py: Import phonebooks and manage certificate
+ - Import
+  - Thunderbird address books
  - Save in Fritz!Box XML format
  - Upload to Fritz!Box
 
+- firtzboxktipp.py: Download phone blacklist from ktipp
+ - Save in Fritz!Box XML format
+ - Upload to Fritz!Box
+ 
 
 ## Tested hardware
 Tested with
