@@ -60,7 +60,6 @@ if __name__ == "__main__":
     if args.kind == "LDIF":
       ldif = fritzbox.LDIF.Import()
       books = ldif.get_books(args.input, args.country_code, vipGroups)
-
   if args.upload:
     print("upload phonebook to %s..." % args.hostname)
     session = fritzbox.access.Session(args.password, url=args.hostname, debug=args.debug)
