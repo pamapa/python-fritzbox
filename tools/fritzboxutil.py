@@ -40,34 +40,33 @@ if __name__ == "__main__":
   # file import
   fileImport = parser.add_argument_group("file import")
   fileImport.add_argument("--kind", choices=["LDIF"], default="LDIF")
-  fileImport.add_argument("--input", help="input filename", default="in.ldif")
+  fileImport.add_argument("--input", help="input filename")
   fileImport.add_argument("--country_code", help="country code, e.g. +41", default="+41")
   fileImport.add_argument("--vip_groups", nargs="+", help="vip group names", default=["Family"])
 
   # upload
-  upload = parser.add_argument_group("upload")
-  upload.add_argument("--hostname", help="hostname", default="https://fritz.box")
-  upload.add_argument("--password", help="password")
-  upload.add_argument("--phonebookid", help="phonebook id", default=0)
+  uploadOrCafile = parser.add_argument_group("upload or cafile")
+  uploadOrCafile.add_argument("--hostname", help="hostname", default="https://fritz.box:443")
+  uploadOrCafile.add_argument("--password", help="password")
+  uploadOrCafile.add_argument("--phonebook_id", help="phonebook id", default=0)
 
   args = parser.parse_args()
 
-  if args.upload:
-    print("upload phonebook to %s..." % args.hostname)
-    #session = fritzbox.access.Session(args.password, args.hostname)
-    #books.upload(session, args.phonebookid)
-  elif args.save:
-    print("save phonebook to %s..." % args.save)
+  books = None    
+  if args.input:
     vipGroups = {}
     for vip_group in args.vip_groups:
       vipGroups[vip_group] = []
-    books = None    
     if args.kind == "LDIF":
       ldif = fritzbox.LDIF.Import()
       books = ldif.get_books(args.input, args.country_code, vipGroups)
-    else:
-      print "Error: Unknown kind %s" % args.kind
-      sys.exit(-1)
+
+  if args.upload:
+    print("upload phonebook to %s..." % args.hostname)
+    session = fritzbox.access.Session(args.password, url=args.hostname, debug=args.debug)
+    books.upload(session, args.phonebook_id)
+  elif args.save:
+    print("save phonebook to %s..." % args.save)
     with open(args.save, "w") as f:
       f.write(str(books))
   elif args.cafile:
