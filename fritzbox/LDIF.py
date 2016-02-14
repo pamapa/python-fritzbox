@@ -97,7 +97,7 @@ class ParsePersons(LDIFParser):
         realName = cn
       else:
         realName = sname
-        if fname and len(fname) > 0:
+        if fname and len(fname) != 0:
           realName += ", %s" % fname
       return fritzbox.phonebook.Person(realName)
 
