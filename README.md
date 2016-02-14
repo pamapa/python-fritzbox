@@ -12,7 +12,7 @@ apt-get install python python-beautifulsoup python-ldap
 
 # Fritz!Box is using own signed certificate, download it locally
 # to /var/local/python-fritzbox. Will be used to verify the secure connection Fritz!Box.
-fritzboxutil.py --cafile
+fritzboxutil.py --savecafile
 ```
 
 

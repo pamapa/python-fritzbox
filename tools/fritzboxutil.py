@@ -40,7 +40,7 @@ if __name__ == "__main__":
   main = parser.add_mutually_exclusive_group(required=True)
   main.add_argument("--upload", help="upload phonebook to Fritz!Box", action="store_true", default=False)
   main.add_argument("--save", help="save phonebook to filename")
-  main.add_argument("--cafile", help="save certificate", action="store_true", default=False)
+  main.add_argument("--savecafile", help="save certificate", action="store_true", default=False)
 
   # file import
   fileImport = parser.add_argument_group("file import")
@@ -76,7 +76,7 @@ if __name__ == "__main__":
     print("save phonebook to %s..." % args.save)
     with open(args.save, "w") as f:
       f.write(str(books))
-  elif args.cafile:
+  elif args.savecafile:
     print("save certificate")
     session = fritzbox.access.Session(args.password, url=args.hostname, cafile=cafile, debug=args.debug)
     session.save_certificate()
