@@ -18,28 +18,18 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #
 
-from __future__ import print_function
 import sys, argparse, re
 from datetime import datetime
 from ldif import LDIFParser
 
 # fritzbox
 import fritzbox.phonebook
-import fritzbox.access
-
-
-g_debug = False
-g_countryCode = "+41"
-g_vipGroups = {}
-
-
-def debug(*objs):
-  if g_debug: print("DEBUG: ", *objs, file=sys.stdout)
-  return
 
 
 class ParseGroups(LDIFParser):
-  def __init__(self, input):
+  def __init__(self, input, vipGroups, debug=False):
+    self.vipGroups = vipGroups
+    self.debug = debug
     LDIFParser.__init__(self, input)
 
   def get_value(self, entry, name):
@@ -51,16 +41,19 @@ class ParseGroups(LDIFParser):
     oc = entry["objectclass"]
     if cn and len(oc) == 2 and oc[0] == "top" and oc[1] == "groupOfNames":
       #debug(cn)      
-      if cn in g_vipGroups:
+      if cn in self.vipGroups:
         for m in entry["member"]:
           #debug(m)
-          g_vipGroups[cn].append(unicode(m, "utf-8"))
+          self.vipGroups[cn].append(unicode(m, "utf-8"))
 
 
 class ParsePersons(LDIFParser):
-  def __init__(self, input):
-    LDIFParser.__init__(self, input)
+  def __init__(self, input, countryCode, vipGroups, debug=False):
+    self.countryCode = countryCode
+    self.vipGroups = vipGroups
+    self.debug = debug
     self.phoneBook = fritzbox.phonebook.Phonebook()
+    LDIFParser.__init__(self, input)
 
   def handle(self, dn, entry):
     #debug(entry)
@@ -85,14 +78,14 @@ class ParsePersons(LDIFParser):
     if number:
       number = re.sub(r"[^0-9\+ ]", "", number).strip()
       number = re.sub(r"^00", "+", number)
-      number = re.sub(r"^0", g_countryCode, number)
+      number = re.sub(r"^0", self.countryCode, number)
     return number
 
   def _get_category(self, entry, cn):
       key = "cn=%s,mail=%s" % (cn, self._get_value(entry, "mail"))
       vip = 0
-      for name in g_vipGroups:
-        if key in g_vipGroups[name]:
+      for name in self.vipGroups:
+        if key in self.vipGroups[name]:
           vip = 1
       return vip
 
@@ -133,50 +126,19 @@ class ParsePersons(LDIFParser):
     return None
 
 
-#
-# main
-#
-if __name__ == "__main__":
-  parser = argparse.ArgumentParser(description="Convert LDIF file to FritzBox adressbook XML")
-  parser.add_argument("--input", help="input filename", required=True)
-  parser.add_argument("--country_code", help="country code, e.g. +41", required=True)
-  parser.add_argument("--vip_groups", nargs="+", help="vip group names", default=["Family"])
+class Import(object):
+  def get_books(self, filename, countryCode, vipGroups, debug=False):
+    # parse groups
+    with open(filename, "r") as f:
+      g = ParseGroups(f, vipGroups, debug=debug)
+      g.parse()
 
-  saveOrUpload = parser.add_mutually_exclusive_group(required=True)
-  saveOrUpload.add_argument("--upload", help="output phonebook", action="store_true", default=False)
-  saveOrUpload.add_argument("--output", help="output filename")
-
-  # upload
-  upload = parser.add_argument_group("upload")
-  upload.add_argument("--hostname", help="hostname", default="https://fritz.box")
-  upload.add_argument("--password", help="password")
-  upload.add_argument("--phonebookid", help="phonebook id", default=0)
-
-  parser.add_argument('--debug', action='store_true')
-  args = parser.parse_args()
-  g_debug = args.debug
-
-  g_countryCode = args.country_code
-  for vip_group in args.vip_groups:
-    g_vipGroups[vip_group] = []
-
-  # parse groups
-  g = ParseGroups(open(args.input, "r"))
-  g.parse()
-
-  # parse persons
-  p = ParsePersons(open(args.input, "r"))
-  p.parse()
-  
-  books = fritzbox.phonebook.Phonebooks()
-  books.addPhonebook(p.phoneBook)
-
-  if args.upload:
-    print("upload to %s..." % args.hostname)
-    session = fritzbox.access.Session(args.password, args.hostname)
-    books.upload(session, args.phonebookid)
-  else:
-    print("save to %s..." % args.output)
-    with open(args.output, "w") as outfile:
-      outfile.write(str(books))
+    # parse persons
+    with open(filename, "r") as f:
+      p = ParsePersons(f, countryCode, g.vipGroups, debug=debug)
+      p.parse()
+    
+    books = fritzbox.phonebook.Phonebooks()
+    books.addPhonebook(p.phoneBook)
+    return books
 
