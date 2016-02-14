@@ -39,7 +39,7 @@ class Person(object):
 
   def __str__(self):
     ret  = "<person>"
-    ret += "<realName>%s</realName>" % self.realName.encode("ISO-8859-1")
+    ret += "<realName>%s</realName>" % self.realName.encode("UTF-8")
     if self.imageURL: ret += "<imageURL>%s</imageURL>" % self.imageURL
     ret += "</person>"
     return ret

@@ -18,7 +18,6 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #
 
-from __future__ import print_function
 import os, sys, argparse, re
 from BeautifulSoup import BeautifulSoup
 import urllib2
@@ -32,14 +31,6 @@ import fritzbox.access
 NAME_MAX_LENGTH = 100
 g_debug = False
 
-
-def error(*objs):
-  print("ERROR: ", *objs, file=sys.stderr)
-  sys.exit(-1)
-
-def debug(*objs):
-  if g_debug: print("DEBUG: ", *objs, file=sys.stdout)
-  return
 
 def extract_number(data):
   n = re.sub(r"[^0-9\+]","", data)
@@ -97,7 +88,7 @@ def extract_name(data):
   return s if len(s)<= NAME_MAX_LENGTH else s[0:NAME_MAX_LENGTH-3]+"..."
 
 def fetch_page(page_nr):
-  print("fetch_page: " + str(page_nr))
+  if g_debug: print("fetch_page: " + str(page_nr))
   page = urllib2.urlopen("https://www.ktipp.ch/service/warnlisten/detail/?warnliste_id=7&ajax=ajax-search-form&page=" + str(page_nr), timeout=10)
   return page.read()
 
@@ -111,7 +102,7 @@ def extract_str(data, start_str, end_str, error_msg):
 
 def parse_page(soup):
   ret = []
-  debug("parse_page...")
+  #if g_debug: print("parse_page...")
   list = soup.findAll("section",{"class":"teaser cf"})
 
   date = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S +0000")
@@ -121,7 +112,7 @@ def parse_page(soup):
     name = extract_name(e.p)
     for n in numbers:
       ret.append({"number":n, "name":name})
-  debug("parse_page done")
+  #if g_debug: print("parse_page done")
   return ret
 
 def parse_pages(content):
@@ -131,15 +122,15 @@ def parse_pages(content):
   tmp = str(soup.findAll("li")[-1])
   max_page_str = extract_str(tmp, "ajaxPagerWarnlisteLoadIndex(", ")", "Can't extract max pages")
   last_page = int(max_page_str)
-  #print last_page
+  if g_debug: print("Last page: %s" % last_page)
   
   ret.extend(parse_page(soup))
   #return ret
   for p in range(1,last_page+1):
     content = fetch_page(p)
-    debug("fetch done, BeautifulSoup...")
+    #if g_debug: print("fetch done, BeautifulSoup...")
     soup = BeautifulSoup(content)
-    debug("BeautifulSoup done")
+    #if g_debug: print("BeautifulSoup done")
     ret.extend(parse_page(soup))
   return ret
 
@@ -147,7 +138,7 @@ def parse_pages(content):
 # remove too small numbers -> dangerous
 # make sure numbers are in international format (e.g. +41AAAABBBBBB)
 def cleanup_entries(arr):
-  debug("cleanup_entries...")
+  #if g_debug: print("cleanup_entries...")
   seen = set()
   uniq = []
   for r in arr:
@@ -161,15 +152,15 @@ def cleanup_entries(arr):
     # filter
     if len(x) < 4:
       # too dangerous
-      debug("Skip too small number: " + str(r))
+      if g_debug: print("Skip too small number: " + str(r))
       continue
     if not x.startswith("+"):
       # not in international format
-      debug("Skip unknown format number: " + str(r))
+      if g_debug: print("Skip unknown format number: " + str(r))
       continue;
     if len(x) > 16:
       # see spec E.164 for international numbers: 15 (including country code) + 1 ("+")
-      debug("Skip too long number:" + str(r))
+      if g_debug: print("Skip too long number:" + str(r))
       continue;
 
     # filter duplicates
@@ -177,7 +168,7 @@ def cleanup_entries(arr):
       uniq.append(r)
       seen.add(x)
 
-  debug("cleanup_entries done")
+  #if g_debug: print("cleanup_entries done")
   return uniq
 
 
@@ -186,10 +177,11 @@ def cleanup_entries(arr):
 #
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Fetch blacklist provided by ktipp.ch")
+  parser.add_argument('--debug', action='store_true')
 
-  saveOrUpload = parser.add_mutually_exclusive_group(required=True)
-  saveOrUpload.add_argument("--upload", help="output phonebook", action="store_true", default=False)
-  saveOrUpload.add_argument("--output", help="output filename")
+  main = parser.add_mutually_exclusive_group(required=True)
+  main.add_argument("--upload", help="upload phonebook to Fritz!Box", action="store_true", default=False)
+  main.add_argument("--save", help="save phonebook to filename")
 
   # upload
   upload = parser.add_argument_group("upload")
@@ -197,13 +189,12 @@ if __name__ == "__main__":
   upload.add_argument("--password", help="password")
   upload.add_argument("--phonebookid", help="phonebook id", default=0)
 
-  parser.add_argument('--debug', action='store_true')
   args = parser.parse_args()
   g_debug = args.debug
 
   content = fetch_page(0)
   source_date = unicode(extract_str(content, "Letzte Aktualisierung:", "<", "Can't extract creation date"))
-  debug(source_date)
+  if g_debug: print("Source date: %s" % source_date)
 #  if last_update == source_date:
 #    # we already have this version
 #    debug("We already have this version")
@@ -229,11 +220,11 @@ if __name__ == "__main__":
   books.addPhonebook(phoneBook)
 
   if args.upload:
-    print("upload to %s..." % args.hostname)
+    print("upload phonebook to %s..." % args.hostname)
     session = fritzbox.access.Session(args.password, args.hostname)
     books.upload(session, args.phonebookid)
   else:
-    print("save to %s..." % args.output)
-    with open(args.output, "w") as outfile:
+    print("save phonebook to %s..." % args.save)
+    with open(args.save, "w") as outfile:
       outfile.write(str(books))
 
