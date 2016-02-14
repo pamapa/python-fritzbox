@@ -49,21 +49,24 @@ class Telephony(object):
   def __init__(self):
     self.numberDict = {}
 
-  # type: "home|mobile|work"
+  # ntype: "home|mobile|work|fax"
   # number: string, best in international format (E.164)
   # prio: 1 for main number, else 0
   # vanity: vanity text
   # quickdial: None or 1-99
-  def addNumber(self, type, number, prio=0, vanity=None, quickdial=None):
-    if type != "home" and type != "mobile" and type != "work":
-      raise PhonebookException("invalid type: %s" % type)
-    self.numberDict[type] = (number, prio, vanity, quickdial)
+  def addNumber(self, ntype, number, prio=0, vanity=None, quickdial=None):
+    if ntype != "home" and ntype != "mobile" and ntype != "work" and ntype != "fax":
+      raise PhonebookException("invalid type: '%s'" % ntype)
+    self.numberDict[ntype] = (number, prio, vanity, quickdial)
+
+  def hasNumbers(self):
+    return True if len(self.numberDict) != 0 else False
 
   def __str__(self):
     ret = "<telephony>"
-    for type in self.numberDict:
-      (number, prio, vanity, quickdial) = self.numberDict[type]
-      ret += '<number type="%s" prio="%u"' % (type, prio)
+    for ntype in self.numberDict:
+      (number, prio, vanity, quickdial) = self.numberDict[ntype]
+      ret += '<number type="%s" prio="%u"' % (ntype, prio)
       if vanity: ret += ' vanity="%s"' % vanity
       if quickdial: ret += ' quickdial="%s"' % quickdial
       ret += '>%s</number>' % number

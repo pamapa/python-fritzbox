@@ -24,6 +24,7 @@ import urlparse
 # fritzbox module
 import fritzbox.phonebook
 import fritzbox.access
+import fritzbox.CSV
 import fritzbox.LDIF
 
 
@@ -44,7 +45,7 @@ if __name__ == "__main__":
 
   # file import
   fileImport = parser.add_argument_group("file import")
-  fileImport.add_argument("--kind", choices=["LDIF"], default="LDIF")
+  fileImport.add_argument("--kind", choices=["LDIF", "CSV"], default="LDIF")
   fileImport.add_argument("--input", help="input filename")
   fileImport.add_argument("--country_code", help="country code, e.g. +41", default="+41")
   fileImport.add_argument("--vip_groups", nargs="+", help="vip group names", default=["Family"])
@@ -65,7 +66,10 @@ if __name__ == "__main__":
       vipGroups[vip_group] = []
     if args.kind == "LDIF":
       ldif = fritzbox.LDIF.Import()
-      books = ldif.get_books(args.input, args.country_code, vipGroups)
+      books = ldif.get_books(args.input, args.country_code, vipGroups, debug=args.debug)
+    elif args.kind == "CSV":
+      csv = fritzbox.CSV.Import()
+      books = csv.get_books(args.input, args.country_code, debug=args.debug)
 
   cafile = None
   if args.hostname and args.usecafile:
