@@ -170,7 +170,7 @@ def parse_csv(filename, delimiter, encoding, countryCode, debug=False):
           break
       # tellows: number = Land Nummer
       if field.find("Nummer") != -1 and "Land" in fields:
-        number = "+%s%s" % (fields["Land"], fields[field_name][1:])
+        number = "+%s%s" % (fields["Land"], fields[field][1:])
         ntype = "work"
       number = normalize_number(number, countryCode)
       if len(number) != 0:
