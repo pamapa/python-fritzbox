@@ -1,5 +1,5 @@
 # python-fritzbox
-Setup the Fritz!Box with python.
+Automated the Fritz!Box by using python.
 
 
 ## Install on Debian (jessie)
@@ -9,7 +9,7 @@ sudo apt-get install python python-beautifulsoup python-ldap
 
 
 ## Tools
-- fritzboxutil.py: Import phonebooks and manage certificate
+- fritzboxutil.py: Import phonebooks, ...
  - Import
   - Thunderbird address books
  - Save in Fritz!Box XML format
