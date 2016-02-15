@@ -24,18 +24,24 @@ import xml.etree.ElementTree as ET
 import ssl
 
 
+CAFILE_PATH="/var/local/python-fritzbox"
+
+
 class SessionException(Exception):
   pass
 
 
 class Session(object):
 
-  def __init__(self, password, url="https://fritz.box", cafile=None, debug=False):
+  def __init__(self, password, url="https://fritz.box", usecafile=True, debug=False):
     self.password = password
     self.url = urlparse.urlparse(url)
     self.sid = None
     self.debug = debug
-    self.cafile = cafile
+    self.cafile = None
+    if usecafile:
+      tmp = self.url.hostname.replace(".", "_")
+      self.cafile = "%s.ca" % os.path.join(CAFILE_PATH, tmp)
 
 
   def save_certificate(self):
@@ -119,7 +125,7 @@ if __name__ == "__main__":
   parser.add_argument("--password", help="password", required=True)
   args = parser.parse_args()
 
-  session = Session(args.password)
+  session = Session(args.password, debug=True)
   #session.save_certificate()
   print session.get_sid()
 

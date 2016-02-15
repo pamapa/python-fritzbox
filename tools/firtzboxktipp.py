@@ -188,6 +188,7 @@ if __name__ == "__main__":
   upload.add_argument("--hostname", help="hostname", default="https://fritz.box")
   upload.add_argument("--password", help="password")
   upload.add_argument("--phonebookid", help="phonebook id", default=1)
+  upload.add_argument("--usecafile", help="use stored certificate to verify secure connection", action="store_true", default=True)
 
   args = parser.parse_args()
   g_debug = args.debug
@@ -221,7 +222,7 @@ if __name__ == "__main__":
 
   if args.upload:
     print("upload phonebook to %s..." % args.hostname)
-    session = fritzbox.access.Session(args.password, args.hostname)
+    session = fritzbox.access.Session(args.password, args.hostname, usecafile=args.usecafile, debug=args.debug)
     books.upload(session, args.phonebookid)
   else:
     print("save phonebook to %s..." % args.save)

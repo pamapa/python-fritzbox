@@ -28,9 +28,6 @@ import fritzbox.CSV
 import fritzbox.LDIF
 
 
-CAFILE_PATH="/var/local/python-fritzbox"
-
-
 #
 # main
 #
@@ -71,22 +68,17 @@ if __name__ == "__main__":
       csv = fritzbox.CSV.Import()
       books = csv.get_books(args.input, args.country_code, debug=args.debug)
 
-  cafile = None
-  if args.hostname and args.usecafile:
-    tmp = urlparse.urlparse(args.hostname).hostname.replace(".", "_")
-    cafile = "%s.ca" % os.path.join(CAFILE_PATH, tmp)
-
   if args.save:
     print("save phonebook to %s..." % args.save)
     with open(args.save, "w") as f:
       f.write(str(books))
   elif args.savecafile:
     print("save certificate")
-    session = fritzbox.access.Session(args.password, url=args.hostname, cafile=cafile, debug=args.debug)
+    session = fritzbox.access.Session(args.password, url=args.hostname, usecafile=args.usecafile, debug=args.debug)
     session.save_certificate()
   elif args.upload:
     print("upload phonebook to %s..." % args.hostname)
-    session = fritzbox.access.Session(args.password, url=args.hostname, cafile=cafile, debug=args.debug)
+    session = fritzbox.access.Session(args.password, url=args.hostname, usecafile=args.usecafile, debug=args.debug)
     #print session.get_sid()
     books.upload(session, args.phonebook_id)
 
