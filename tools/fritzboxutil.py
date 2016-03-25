@@ -42,14 +42,13 @@ if __name__ == "__main__":
 
   # file import
   fileImport = parser.add_argument_group("file import")
-  fileImport.add_argument("--kind", choices=["LDIF", "CSV"], default="LDIF")
   fileImport.add_argument("--input", help="input filename")
   fileImport.add_argument("--country_code", help="country code, e.g. +41", default="+41")
   fileImport.add_argument("--vip_groups", nargs="+", help="vip group names", default=["Family"])
 
   # upload
   uploadOrCafile = parser.add_argument_group("upload or cafile")
-  uploadOrCafile.add_argument("--hostname", help="hostname", default="https://fritz.box:443")
+  uploadOrCafile.add_argument("--hostname", help="hostname", default="https://fritz.box")
   uploadOrCafile.add_argument("--password", help="password")
   uploadOrCafile.add_argument("--phonebook_id", help="phonebook id", default=0)
   uploadOrCafile.add_argument("--usecafile", help="use stored certificate to verify secure connection", action="store_true", default=True)
@@ -61,12 +60,16 @@ if __name__ == "__main__":
     vipGroups = {}
     for vip_group in args.vip_groups:
       vipGroups[vip_group] = []
-    if args.kind == "LDIF":
+    ext = os.path.splitext(args.input)[1].lower()
+    if ext == ".ldif":
       ldif = fritzbox.LDIF.Import()
       books = ldif.get_books(args.input, args.country_code, vipGroups, debug=args.debug)
-    elif args.kind == "CSV":
+    elif ext == ".csv":
       csv = fritzbox.CSV.Import()
       books = csv.get_books(args.input, args.country_code, debug=args.debug)
+    else:
+      print("Error: File format not supported '%s'. Supported are LDIF and CSV." % ext)
+      sys.exit(-1)
 
   if args.save:
     print("save phonebook to %s..." % args.save)
