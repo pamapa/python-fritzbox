@@ -220,12 +220,11 @@ if __name__ == "__main__":
   books = fritzbox.phonebook.Phonebooks()
   books.addPhonebook(phoneBook)
 
-  if args.upload:
+  if args.save:
+    print("save phonebook to %s..." % args.save)
+    books.write(args.save)
+  elif args.upload:
     print("upload phonebook to %s..." % args.hostname)
     session = fritzbox.access.Session(args.password, args.hostname, usecafile=args.usecafile, debug=args.debug)
     books.upload(session, args.phonebookid)
-  else:
-    print("save phonebook to %s..." % args.save)
-    with open(args.save, "w") as outfile:
-      outfile.write(str(books))
 

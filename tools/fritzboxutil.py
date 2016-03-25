@@ -70,8 +70,7 @@ if __name__ == "__main__":
 
   if args.save:
     print("save phonebook to %s..." % args.save)
-    with open(args.save, "w") as f:
-      f.write(str(books))
+    books.write(args.save)
   elif args.savecafile:
     print("save certificate")
     session = fritzbox.access.Session(args.password, url=args.hostname, usecafile=args.usecafile, debug=args.debug)

@@ -20,6 +20,7 @@
 
 from datetime import datetime
 import tempfile, urllib, urllib2
+import xml.etree.ElementTree as ET
 
 # fritzbox
 import access
@@ -37,12 +38,11 @@ class Person(object):
     self.realName = realName
     self.imageURL = imageURL
 
-  def __str__(self):
-    ret  = "<person>"
-    ret += "<realName>%s</realName>" % self.realName.encode("ISO-8859-1", "replace")
-    if self.imageURL: ret += "<imageURL>%s</imageURL>" % self.imageURL
-    ret += "</person>"
-    return ret
+  def getXML(self):
+    xml = ET.Element("person")
+    ET.SubElement(xml, "realName").text = self.realName
+    if self.imageURL: ET.SubElement(xml, "imageURL").text = self.imageURL
+    return xml
 
 
 class Telephony(object):
@@ -62,16 +62,15 @@ class Telephony(object):
   def hasNumbers(self):
     return True if len(self.numberDict) != 0 else False
 
-  def __str__(self):
-    ret = "<telephony>"
+  def getXML(self):
+    xml = ET.Element("telephony")
     for ntype in self.numberDict:
-      (number, prio, vanity, quickdial) = self.numberDict[ntype]
-      ret += '<number type="%s" prio="%u"' % (ntype, prio)
-      if vanity: ret += ' vanity="%s"' % vanity
-      if quickdial: ret += ' quickdial="%s"' % quickdial
-      ret += '>%s</number>' % number
-    ret += "</telephony>"
-    return ret
+      (number, nprio, vanity, quickdial) = self.numberDict[ntype]
+      x = ET.SubElement(xml, "number", type=ntype, prio=str(nprio))
+      if vanity: x.set("vanity", vanity)
+      if quickdial: x.set("quickdial", quickdial)
+      x.text = number
+    return xml
 
 
 class Contact(object):
@@ -85,16 +84,15 @@ class Contact(object):
     self.telephony = telephony
     self.mod_datetime  = mod_datetime
 
-  def __str__(self):
-    ret  = "<contact>\n"
-    ret += "<category>%u</category>\n" % self.category
-    ret += "%s\n" % str(self.person)
-    ret += "%s\n" % str(self.telephony)
-    ret += "<services/>" # not used yet
-    ret += "<setup/>" # not used yet
-    if self.mod_datetime: ret += "<mod_time>%s</mod_time>\n" % self.mod_datetime.strftime("%s")
-    ret += "</contact>"
-    return ret
+  def getXML(self):
+    xml = ET.Element("contact")
+    ET.SubElement(xml, "category").text = str(self.category)
+    xml.append(self.person.getXML())
+    xml.append(self.telephony.getXML())
+    ET.SubElement(xml, "services") # not used yet
+    ET.SubElement(xml, "setup") # not used yet
+    if self.mod_datetime: ET.SubElement(xml, "mod_time").text = self.mod_datetime.strftime("%s")
+    return xml
 
 
 class Phonebook(object):
@@ -106,13 +104,12 @@ class Phonebook(object):
   def addContact(self, contact):
     self.contactList.append(contact)
 
-  def __str__(self):
-    if self.name: ret = '<phonebook name="%s">\n' % self.name
-    else: ret = '<phonebook>\n'
+  def getXML(self):
+    xml = ET.Element("phonebook")
+    if self.name: xml.set("name", self.name)
     for contact in self.contactList:
-      ret += '%s\n' % str(contact)
-    ret += '</phonebook>'
-    return ret
+      xml.append(contact.getXML())
+    return xml
 
 
 class Phonebooks(object):
@@ -123,20 +120,19 @@ class Phonebooks(object):
   def addPhonebook(self, phonebook):
     self.phonebookList.append(phonebook)
 
-  def __str__(self):
-    ret  = '<?xml version="1.0" encoding="iso-8859-1"?>\n'
-    ret += "<phonebooks>\n"
+  def write(self, filename):
+    xml = ET.Element("phonebooks")
     for book in self.phonebookList:
-      ret += "%s\n" % str(book)
-    ret += "</phonebooks>"
-    return ret
+      xml.append(book.getXML())
+    tree = ET.ElementTree(xml)
+    tree.write(filename, encoding="iso-8859-1", xml_declaration=True)
 
   # sid: Login session ID
   # phonebookid: 0 for main phone book
   #              1 for next phone book in list, etc...
   def upload(self, session, phonebookid=0):
     tmpfile = tempfile.NamedTemporaryFile(mode="w")
-    tmpfile.write(str(self))
+    self.write(tmpfile.name)
     tmpfile.flush()
 
     # upload
