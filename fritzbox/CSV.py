@@ -132,9 +132,12 @@ def getEntityPerson(fields):
       last_name = fields[field_name]
       break
 
-  realName = last_name
-  if len(first_name) != 0:
-    realName += ", %s" % first_name
+  if len(last_name) == 0:
+    realName = first_name
+  else:
+    realName = last_name
+    if len(first_name) != 0:
+      realName += ", %s" % first_name
   return fritzbox.phonebook.Person(realName)
 
 
