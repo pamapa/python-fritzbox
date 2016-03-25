@@ -1,5 +1,5 @@
 # python-fritzbox
-Automated the Fritz!Box by using python.
+Automate the Fritz!Box by using python.
 
 
 ## Install on Debian (jessie)
