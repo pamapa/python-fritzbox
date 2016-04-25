@@ -193,8 +193,8 @@ if __name__ == "__main__":
     help="password")
   upload.add_argument("--phonebookid", default=1,
     help="phonebook id")
-  upload.add_argument("--usecafile", action="store_true", default=True,
-    help="use stored certificate to verify secure connection")
+  uploadOrCafile.add_argument("--nocafile", dest="usecafile", action="store_false", default=True,
+    help="do not use certificate to verify secure connection. Default is with certificate")
 
   args = parser.parse_args()
   g_debug = args.debug
