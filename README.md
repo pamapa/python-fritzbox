@@ -22,16 +22,19 @@ fritzboxutil.py --savecafile
 
 
 ## Tools
-- fritzboxutil.py: Import phonebooks
- - Import
-  - Thunderbird address books (LDIF)
-  - Various other address book formats (CSV)
- - Save into Fritz!Box XML format for manual upload
- - Upload directly to Fritz!Box
 
-- firtzboxktipp.py: Download phone blacklist from ktipp (https://www.ktipp.ch), which is a phone spam blacklist periodically updated
- - Save into Fritz!Box XML format for manual upload
- - Upload directly to Fritz!Box
+### fritzboxutil.py
+Import phonebooks
+- Import
+- Thunderbird address books (LDIF)
+- Various other address book formats (CSV)
+- Save into Fritz!Box XML format for manual upload
+- Upload directly to Fritz!Box
+
+### firtzboxktipp.py
+Download phone blacklist from ktipp (https://www.ktipp.ch), which is a phone spam blacklist periodically updated
+- Save into Fritz!Box XML format for manual upload
+- Upload directly to Fritz!Box
  
 
 ## Tested hardware
