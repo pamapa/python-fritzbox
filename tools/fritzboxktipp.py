@@ -180,15 +180,21 @@ if __name__ == "__main__":
   parser.add_argument('--debug', action='store_true')
 
   main = parser.add_mutually_exclusive_group(required=True)
-  main.add_argument("--upload", help="upload phonebook to Fritz!Box", action="store_true", default=False)
-  main.add_argument("--save", help="save phonebook to filename")
+  main.add_argument("--upload", action="store_true", default=False,
+    help="upload phonebook to Fritz!Box")
+  main.add_argument("--save",
+    help="save phonebook to filename")
 
   # upload
   upload = parser.add_argument_group("upload")
-  upload.add_argument("--hostname", help="hostname", default="https://fritz.box")
-  upload.add_argument("--password", help="password")
-  upload.add_argument("--phonebookid", help="phonebook id", default=1)
-  upload.add_argument("--usecafile", help="use stored certificate to verify secure connection", action="store_true", default=True)
+  upload.add_argument("--hostname", default="https://fritz.box",
+    help="hostname")
+  upload.add_argument("--password",
+    help="password")
+  upload.add_argument("--phonebookid", default=1,
+    help="phonebook id")
+  upload.add_argument("--usecafile", action="store_true", default=True,
+    help="use stored certificate to verify secure connection")
 
   args = parser.parse_args()
   g_debug = args.debug
@@ -220,11 +226,15 @@ if __name__ == "__main__":
   books = fritzbox.phonebook.Phonebooks()
   books.addPhonebook(phoneBook)
 
-  if args.save:
-    print("save phonebook to %s..." % args.save)
-    books.write(args.save)
-  elif args.upload:
-    print("upload phonebook to %s..." % args.hostname)
-    session = fritzbox.access.Session(args.password, args.hostname, usecafile=args.usecafile, debug=args.debug)
-    books.upload(session, args.phonebookid)
+  try:
+    if args.save:
+      print("save phonebook to %s..." % args.save)
+      books.write(args.save)
+    elif args.upload:
+      print("upload phonebook to %s..." % args.hostname)
+      session = fritzbox.access.Session(args.password, args.hostname, usecafile=args.usecafile, debug=args.debug)
+      books.upload(session, args.phonebookid)
+  except Exception, ex:
+    print("Error: %s" % ex)
+    sys.exit(-2)
 

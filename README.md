@@ -10,8 +10,8 @@ apt-get install python python-setuptools python-beautifulsoup python-ldap
 git clone https://github.com/pamapa/python-fritzbox.git
 cd python-fritzbox
 
-# install in files under at /usr/local/lib/python2.7/dist-packages/
-# and script links at /usr/local/bin
+# install the files at /usr/local/lib/python2.7/dist-packages/
+#  and script links at /usr/local/bin
 python setup.py install
 
 # Fritz!Box is using its own signed certificate. The certificate is used to verify the

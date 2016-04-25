@@ -36,22 +36,34 @@ if __name__ == "__main__":
   parser.add_argument('--debug', action='store_true')
 
   main = parser.add_mutually_exclusive_group(required=True)
-  main.add_argument("--upload", help="upload phonebook to Fritz!Box", action="store_true", default=False)
-  main.add_argument("--save", help="save phonebook to filename")
-  main.add_argument("--savecafile", help="save certificate", action="store_true", default=False)
+  main.add_argument("--upload", action="store_true", default=False,
+    help="upload phonebook to Fritz!Box")
+  main.add_argument("--save",
+    help="save phonebook to local file")
+  main.add_argument("--savecafile", action="store_true", default=False,
+    help="save certificate")
+  main.add_argument("--testaccess", action="store_true", default=False,
+    help="test access to Fritz!Box")
 
   # file import
   fileImport = parser.add_argument_group("file import")
-  fileImport.add_argument("--input", help="input filename")
-  fileImport.add_argument("--country_code", help="country code, e.g. +41", default="+41")
-  fileImport.add_argument("--vip_groups", nargs="+", help="vip group names", default=["Family"])
+  fileImport.add_argument("--input",
+    help="input filename")
+  fileImport.add_argument("--country_code", default="+41",
+    help="country code, e.g. +41")
+  fileImport.add_argument("--vip_groups", nargs="+", default=["Family"],
+    help="vip group names")
 
   # upload
   uploadOrCafile = parser.add_argument_group("upload or cafile")
-  uploadOrCafile.add_argument("--hostname", help="hostname", default="https://fritz.box")
-  uploadOrCafile.add_argument("--password", help="password")
-  uploadOrCafile.add_argument("--phonebook_id", help="phonebook id", default=0)
-  uploadOrCafile.add_argument("--usecafile", help="use stored certificate to verify secure connection", action="store_true", default=True)
+  uploadOrCafile.add_argument("--hostname", default="https://fritz.box",
+    help="hostname")
+  uploadOrCafile.add_argument("--password",
+    help="password")
+  uploadOrCafile.add_argument("--phonebook_id", default=0,
+    help="phonebook id")
+  uploadOrCafile.add_argument("--usecafile", action="store_true", default=True,
+    help="use stored certificate to verify secure connection")
 
   args = parser.parse_args()
 
@@ -71,16 +83,24 @@ if __name__ == "__main__":
       print("Error: File format not supported '%s'. Supported are LDIF and CSV." % ext)
       sys.exit(-1)
 
-  if args.save:
-    print("save phonebook to %s..." % args.save)
-    books.write(args.save)
-  elif args.savecafile:
-    print("save certificate")
-    session = fritzbox.access.Session(args.password, url=args.hostname, usecafile=args.usecafile, debug=args.debug)
-    session.save_certificate()
-  elif args.upload:
-    print("upload phonebook to %s..." % args.hostname)
-    session = fritzbox.access.Session(args.password, url=args.hostname, usecafile=args.usecafile, debug=args.debug)
-    #print session.get_sid()
-    books.upload(session, args.phonebook_id)
+  try:
+    if args.save:
+      print("save phonebook to %s..." % args.save)
+      books.write(args.save)
+    elif args.savecafile:
+      print("save certificate")
+      session = fritzbox.access.Session(args.password, url=args.hostname, usecafile=args.usecafile, debug=args.debug)
+      session.save_certificate()
+    elif args.upload:
+      print("upload phonebook to %s..." % args.hostname)
+      session = fritzbox.access.Session(args.password, url=args.hostname, usecafile=args.usecafile, debug=args.debug)
+      books.upload(session, args.phonebook_id)
+    elif args.testaccess:
+      print("test access to %s..." % args.hostname)
+      session = fritzbox.access.Session(args.password, url=args.hostname, usecafile=args.usecafile, debug=args.debug)
+      session.get_sid()
+      print("Login worked")
+  except Exception, ex:
+    print("Error: %s" % ex)
+    sys.exit(-2)
 
