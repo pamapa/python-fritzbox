@@ -26,8 +26,9 @@ fritzboxutil.py --savecafile
 ### fritzboxutil.py
 Import phonebooks
 - Import
-- Thunderbird address books (LDIF)
-- Various other address book formats (CSV)
+ - Thunderbird address books (LDIF)
+ - Various other address book formats (CSV)
+ - Blacklists provied as address books from tellows (http://www.tellows.com)
 - Save into Fritz!Box XML format for manual upload
 - Upload directly to Fritz!Box
 
