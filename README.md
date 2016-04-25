@@ -5,17 +5,18 @@ Automate the Fritz!Box by using python.
 ## Install on Debian (jessie)
 ```bash
 su root
-apt-get install python python-beautifulsoup python-ldap
-
-# TODO: finish this section and provide a simple way
+apt-get install python python-setuptools python-beautifulsoup python-ldap 
 
 git clone https://github.com/pamapa/python-fritzbox.git
- 
-Add installed python-fritzbox directory to PYTHONPATH in .bashrc
-e.g. PYTHONPATH=$PYTHONPATH:{install path}/python-fritzbox
+cd python-fritzbox
 
-# Fritz!Box is using own signed certificate, download it locally
-# to /var/local/python-fritzbox. Will be used to verify the secure connection Fritz!Box.
+# install in files under at /usr/local/lib/python2.7/dist-packages/
+# and script links at /usr/local/bin
+python setup.py install
+
+# Fritz!Box is using its own signed certificate. The certificate is used to verify the
+# secure connection to the Fritz!Box.
+# This command will download and store the certificate to /etc/ssl/localcerts.
 fritzboxutil.py --savecafile
 ```
 

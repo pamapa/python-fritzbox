@@ -24,7 +24,7 @@ import xml.etree.ElementTree as ET
 import ssl
 
 
-CAFILE_PATH="/var/local/python-fritzbox"
+CAFILE_PATH="/etc/ssl/localcerts"
 
 
 class SessionException(Exception):
@@ -40,14 +40,16 @@ class Session(object):
     self.debug = debug
     self.cafile = None
     if usecafile:
-      tmp = self.url.hostname.replace(".", "_")
-      self.cafile = "%s.ca" % os.path.join(CAFILE_PATH, tmp)
+      name = "FritzBox_%s" % self.url.hostname.replace(".", "_")
+      self.cafile = "%s.crt" % os.path.join(CAFILE_PATH, name)
 
 
   def save_certificate(self):
     port = self.url.port if self.url.port else 443
     adr = (self.url.hostname, port)
     if self.debug: print "save_certificate of %s to %s" % (str(adr), self.cafile)
+    capath = os.path.dirname(self.cafile)
+    if not os.path.exists(capath): os.makedirs(capath)
     cert = ssl.get_server_certificate(adr)
     with open(self.cafile, "w") as outfile:
       outfile.write(cert)
