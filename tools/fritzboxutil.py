@@ -21,7 +21,7 @@
 import os, sys, argparse
 import urlparse
 
-# fritzbox module
+# fritzbox modules
 import fritzbox.phonebook
 import fritzbox.access
 import fritzbox.CSV
@@ -35,34 +35,35 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Fritz!Box util")
   parser.add_argument('--debug', action='store_true')
 
+  # action
   main = parser.add_mutually_exclusive_group(required=True)
   main.add_argument("--upload", action="store_true", default=False,
-    help="upload phonebook to Fritz!Box")
+    help="upload phonebook specified with INPUT to Fritz!Box")
   main.add_argument("--save",
-    help="save phonebook to local file")
-  main.add_argument("--savecafile", action="store_true", default=False,
+    help="save phonebook specified with INPUT to local file")
+  main.add_argument("--save-cert", dest="save_cert", action="store_true", default=False,
     help="save certificate")
-  main.add_argument("--testaccess", action="store_true", default=False,
+  main.add_argument("--test-access", dest="test_access", action="store_true", default=False,
     help="test access to Fritz!Box")
 
   # file import
   fileImport = parser.add_argument_group("file import")
   fileImport.add_argument("--input",
     help="input filename")
-  fileImport.add_argument("--country_code", default="+41",
+  fileImport.add_argument("--country-code", dest="country_code", default="+41",
     help="country code, e.g. +41")
-  fileImport.add_argument("--vip_groups", nargs="+", default=["Family"],
+  fileImport.add_argument("--vip-groups", dest="vip_groups", nargs="+", default=["Family"],
     help="vip group names")
 
   # upload
-  uploadOrCafile = parser.add_argument_group("upload or cafile")
-  uploadOrCafile.add_argument("--hostname", default="https://fritz.box",
+  upload = parser.add_argument_group("upload")
+  upload.add_argument("--hostname", default="https://fritz.box",
     help="hostname")
-  uploadOrCafile.add_argument("--password",
+  upload.add_argument("--password",
     help="password")
-  uploadOrCafile.add_argument("--phonebook_id", default=0,
+  upload.add_argument("--phonebook-id", dest="phonebook_id", default=0,
     help="phonebook id")
-  uploadOrCafile.add_argument("--nocafile", dest="usecafile", action="store_false", default=True,
+  upload.add_argument("--no-cert-verify", dest="cert_verify", action="store_false", default=True,
     help="do not use certificate to verify secure connection. Default is with certificate")
 
   args = parser.parse_args()
@@ -87,17 +88,17 @@ if __name__ == "__main__":
     if args.save:
       print("save phonebook to %s..." % args.save)
       books.write(args.save)
-    elif args.savecafile:
+    elif args.save_cert:
       print("save certificate")
       session = fritzbox.access.Session(args.password, url=args.hostname, usecafile=args.usecafile, debug=args.debug)
       session.save_certificate()
     elif args.upload:
       print("upload phonebook to %s..." % args.hostname)
-      session = fritzbox.access.Session(args.password, url=args.hostname, usecafile=args.usecafile, debug=args.debug)
+      session = fritzbox.access.Session(args.password, url=args.hostname, usecafile=args.cert_verify, debug=args.debug)
       books.upload(session, args.phonebook_id)
-    elif args.testaccess:
+    elif args.test_access:
       print("test access to %s..." % args.hostname)
-      session = fritzbox.access.Session(args.password, url=args.hostname, usecafile=args.usecafile, debug=args.debug)
+      session = fritzbox.access.Session(args.password, url=args.hostname, usecafile=args.cert_verify, debug=args.debug)
       session.get_sid()
       print("Login worked")
   except Exception, ex:

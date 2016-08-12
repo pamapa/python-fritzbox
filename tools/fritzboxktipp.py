@@ -127,6 +127,9 @@ def parse_pages(content):
   ret.extend(parse_page(soup))
   #return ret
   for p in range(1,last_page+1):
+    if not g_debug:
+      sys.stdout.write("Fetch page %s of %s\r" % (p, last_page))
+      sys.stdout.flush()
     content = fetch_page(p)
     #if g_debug: print("fetch done, BeautifulSoup...")
     soup = BeautifulSoup(content)
@@ -179,11 +182,12 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Fetch blacklist provided by ktipp.ch")
   parser.add_argument('--debug', action='store_true')
 
+  # action
   main = parser.add_mutually_exclusive_group(required=True)
   main.add_argument("--upload", action="store_true", default=False,
-    help="upload phonebook to Fritz!Box")
+    help="upload phonebook received from Ktipp to Fritz!Box")
   main.add_argument("--save",
-    help="save phonebook to filename")
+    help="save phonebook received from Ktipp to filename")
 
   # upload
   upload = parser.add_argument_group("upload")
@@ -191,14 +195,17 @@ if __name__ == "__main__":
     help="hostname")
   upload.add_argument("--password",
     help="password")
-  upload.add_argument("--phonebookid", default=1,
+  upload.add_argument("--phonebook-id", dest="phonebook_id", default=1,
     help="phonebook id")
-  uploadOrCafile.add_argument("--nocafile", dest="usecafile", action="store_false", default=True,
+  upload.add_argument("--no-cert-verify", dest="cert_verify", action="store_false", default=True,
     help="do not use certificate to verify secure connection. Default is with certificate")
 
   args = parser.parse_args()
   g_debug = args.debug
 
+  if not g_debug:
+    sys.stdout.write("Fetch page 0 of ?\r")
+    sys.stdout.flush()
   content = fetch_page(0)
   source_date = unicode(extract_str(content, "Letzte Aktualisierung:", "<", "Can't extract creation date"))
   if g_debug: print("Source date: %s" % source_date)
@@ -232,8 +239,8 @@ if __name__ == "__main__":
       books.write(args.save)
     elif args.upload:
       print("upload phonebook to %s..." % args.hostname)
-      session = fritzbox.access.Session(args.password, args.hostname, usecafile=args.usecafile, debug=args.debug)
-      books.upload(session, args.phonebookid)
+      session = fritzbox.access.Session(args.password, args.hostname, usecafile=args.cert_verify, debug=args.debug)
+      books.upload(session, args.phonebook_id)
   except Exception, ex:
     print("Error: %s" % ex)
     sys.exit(-2)
