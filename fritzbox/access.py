@@ -33,13 +33,13 @@ class SessionException(Exception):
 
 class Session(object):
 
-  def __init__(self, password, url="https://fritz.box", usecafile=True, debug=False):
+  def __init__(self, password, url="https://fritz.box", cert_verify=True, debug=False):
     self.password = password
     self.url = urlparse.urlparse(url)
     self.sid = None
     self.debug = debug
     self.cafile = None
-    if usecafile:
+    if cert_verify:
       name = "FritzBox_%s" % self.url.hostname.replace(".", "_")
       self.cafile = "%s.crt" % os.path.join(CAFILE_PATH, name)
 

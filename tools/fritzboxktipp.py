@@ -239,7 +239,7 @@ if __name__ == "__main__":
       books.write(args.save)
     elif args.upload:
       print("upload phonebook to %s..." % args.hostname)
-      session = fritzbox.access.Session(args.password, args.hostname, usecafile=args.cert_verify, debug=args.debug)
+      session = fritzbox.access.Session(args.password, args.hostname, cert_verify=args.cert_verify, debug=args.debug)
       books.upload(session, args.phonebook_id)
   except Exception, ex:
     print("Error: %s" % ex)

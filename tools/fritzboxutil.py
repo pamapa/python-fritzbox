@@ -90,15 +90,15 @@ if __name__ == "__main__":
       books.write(args.save)
     elif args.save_cert:
       print("save certificate")
-      session = fritzbox.access.Session(args.password, url=args.hostname, usecafile=args.usecafile, debug=args.debug)
+      session = fritzbox.access.Session(args.password, url=args.hostname, cert_verify=args.usecafile, debug=args.debug)
       session.save_certificate()
     elif args.upload:
       print("upload phonebook to %s..." % args.hostname)
-      session = fritzbox.access.Session(args.password, url=args.hostname, usecafile=args.cert_verify, debug=args.debug)
+      session = fritzbox.access.Session(args.password, url=args.hostname, cert_verify=args.cert_verify, debug=args.debug)
       books.upload(session, args.phonebook_id)
     elif args.test_access:
       print("test access to %s..." % args.hostname)
-      session = fritzbox.access.Session(args.password, url=args.hostname, usecafile=args.cert_verify, debug=args.debug)
+      session = fritzbox.access.Session(args.password, url=args.hostname, cert_verify=args.cert_verify, debug=args.debug)
       session.get_sid()
       print("Login worked")
   except Exception, ex:
