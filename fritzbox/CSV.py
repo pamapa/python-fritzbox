@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# callblocker - blocking unwanted calls from your home phone
+# python-fritzbox - setup the Fritz!Box with python
 # Copyright (C) 2015-2015 Patrick Ammann <pammann@gmx.net>
 #
 # This program is free software; you can redistribute it and/or
@@ -154,24 +154,26 @@ def parse_csv(filename, delimiter, encoding, countryCode, debug=False):
     person = getEntityPerson(fields)
     #if debug: print(name)
 
-    # find numbers and categorize to "home|mobile|work|fax"
-    number_names = {
+    # map CSV type to Fritz!Box type
+    map_number_names = {
       "work phone":"work",
       "home phone":"home",
       "mobile":"mobile",
       "fax":"fax"
     }
+
+    # find numbers and categorize to "home|mobile|work|fax"
     telephony = fritzbox.phonebook.Telephony()
     for field in fields:
       if not field: continue
       number = ""
       ntype = None
-      for n in number_names:
+      for n in map_number_names:
         if field.lower().find(n) != -1:
           number = fields[field]
-          ntype = number_names[n]
+          ntype = map_number_names[n]
           break
-      # tellows: number = Land Nummer
+      # workaround for tellows.de: number = Land Nummer
       if field.find("Nummer") != -1 and "Land" in fields:
         number = "+%s%s" % (fields["Land"], fields[field][1:])
         ntype = "work"
