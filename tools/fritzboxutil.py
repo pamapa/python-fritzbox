@@ -27,6 +27,7 @@ import fritzbox.access
 import fritzbox.CSV
 import fritzbox.LDIF
 import fritzbox.VCF
+import fritzbox.CardDAV
 
 
 #
@@ -56,6 +57,15 @@ if __name__ == "__main__":
   fileImport.add_argument("--vip-groups", dest="vip_groups", nargs="+", default=["Family"],
     help="vip group names")
 
+  # download from WebDAV server (e.g. Nextcloud)
+  download = parser.add_argument_group("download")
+  download.add_argument("--webdav-url", dest="webdav_url",
+    help="webdav URL, e.g. https://<HOST>/remote.php/dav/addressbooks/users/<LOGIN>/<BOOK>/")
+  download.add_argument("--webdav-username", dest="webdav_username",
+    help="webdav username")
+  download.add_argument("--webdav-password", dest="webdav_password",
+    help="webdav password")
+
   # upload
   upload = parser.add_argument_group("upload")
   upload.add_argument("--hostname", default="https://fritz.box",
@@ -69,41 +79,47 @@ if __name__ == "__main__":
 
   args = parser.parse_args()
 
-  books = None    
-  if args.input:
-    vipGroups = {}
-    for vip_group in args.vip_groups:
-      vipGroups[vip_group] = []
-    ext = os.path.splitext(args.input)[1].lower()
-    if ext == ".csv":
-      csv = fritzbox.CSV.Import()
-      books = csv.get_books(args.input, vipGroups, debug=args.debug)
-    elif ext == ".ldif":
-      ldif = fritzbox.LDIF.Import()
-      books = ldif.get_books(args.input, vipGroups, debug=args.debug)
-    elif ext == ".vcf":
-      vcf = fritzbox.VCF.Import()
-      books = vcf.get_books(args.input, vipGroups, debug=args.debug)
-    else:
-      print("Error: File format not supported '%s'. Supported are LDIF and CSV." % ext)
-      sys.exit(-1)
-    books.normalizeNumbers(args.country_code)
-    books.calculateMainNumber()
-
   try:
+    books = None
+    if args.input:
+      print("read phonebook from %s" % args.input)
+      ext = os.path.splitext(args.input)[1].lower()
+      if ext == ".csv":
+        csv = fritzbox.CSV.Import()
+        books = csv.get_books(args.input, args.vip_groups, debug=args.debug)
+      elif ext == ".ldif":
+        ldif = fritzbox.LDIF.Import()
+        books = ldif.get_books(args.input, args.vip_groups, debug=args.debug)
+      elif ext == ".vcf":
+        vcf = fritzbox.VCF.Import()
+        books = vcf.get_books(args.input, args.vip_groups, debug=args.debug)
+      else:
+        print("Error: File format not supported '%s'. Supported are LDIF and CSV." % ext)
+        sys.exit(-1)
+    elif args.webdav_url:
+      print("download phonebook from %s" % args.webdav_url)
+      dav = fritzbox.CardDAV.Import()
+      books = dav.get_books(args.webdav_url, args.webdav_username, args.webdav_password,
+                            vipGroups=args.vip_groups, debug=args.debug)
+
+    # post process
+    if books:
+      books.normalizeNumbers(args.country_code)
+      books.calculateMainNumber()
+
     if args.save:
-      print("save phonebook to %s..." % args.save)
+      print("save phonebook to %s" % args.save)
       books.write(args.save)
     elif args.save_cert:
       print("save certificate")
       session = fritzbox.access.Session(args.password, url=args.hostname, cert_verify=args.usecafile, debug=args.debug)
       session.save_certificate()
     elif args.upload:
-      print("upload phonebook to %s..." % args.hostname)
+      print("upload phonebook to %s" % args.hostname)
       session = fritzbox.access.Session(args.password, url=args.hostname, cert_verify=args.cert_verify, debug=args.debug)
       books.upload(session, args.phonebook_id)
     elif args.test_access:
-      print("test access to %s..." % args.hostname)
+      print("test access to %s" % args.hostname)
       session = fritzbox.access.Session(args.password, url=args.hostname, cert_verify=args.cert_verify, debug=args.debug)
       session.get_sid()
       print("Login worked")

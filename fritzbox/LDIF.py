@@ -28,7 +28,11 @@ import fritzbox.phonebook
 
 class ParseGroups(LDIFParser):
   def __init__(self, input, vipGroups, debug=False):
-    self.vipGroups = vipGroups
+
+    self.vipGroups = {}
+    for g in vipGroups:
+      self.vipGroups[g] = []
+
     self.debug = debug
     LDIFParser.__init__(self, input)
 
