@@ -48,8 +48,7 @@ class ParseGroups(LDIFParser):
 
 
 class ParsePersons(LDIFParser):
-  def __init__(self, input, countryCode, vipGroups, debug=False):
-    self.countryCode = countryCode
+  def __init__(self, input, vipGroups, debug=False):
     self.vipGroups = vipGroups
     self.debug = debug
     self.phoneBook = fritzbox.phonebook.Phonebook()
@@ -59,9 +58,9 @@ class ParsePersons(LDIFParser):
     #debug(entry)
     cn = self._get_value(entry, "cn")
 
-    home = self._normalize_number(self._get_value(entry, "homePhone"))
-    mobile = self._normalize_number(self._get_value(entry, "mobile"))
-    work = self._normalize_number(self._get_value(entry, "telephoneNumber"))
+    home = self._get_value(entry, "homePhone")
+    mobile = self._get_value(entry, "mobile")
+    work = self._get_value(entry, "telephoneNumber")
     if home and len(home) > 0 or mobile and len(mobile) > 0 or work and len(work) > 0:
       contact = fritzbox.phonebook.Contact(
         self._get_category(entry, cn),
@@ -73,13 +72,6 @@ class ParsePersons(LDIFParser):
 
   def _get_value(self, entry, name):
     return unicode(entry[name][0], "utf-8") if name in entry else None
-
-  def _normalize_number(self, number):
-    if number:
-      number = re.sub(r"[^0-9\+ ]", "", number).strip()
-      number = re.sub(r"^00", "+", number)
-      number = re.sub(r"^0", self.countryCode, number)
-    return number
 
   def _get_category(self, entry, cn):
       key = "cn=%s,mail=%s" % (cn, self._get_value(entry, "mail"))
@@ -102,23 +94,13 @@ class ParsePersons(LDIFParser):
       return fritzbox.phonebook.Person(realName)
 
   def _get_telephony(self, home, mobile, work):    
-    # which number has prio    
-    mainnumber = "work"
-    if home and len(home) > 0:
-      mainnumber = "home"
-    elif mobile and len(mobile) > 0:
-      mainnumber = "mobile"
-
     telephony = fritzbox.phonebook.Telephony()
     if home:
-      prio = 1 if "home" == mainnumber else 0
-      telephony.addNumber("home", home, prio)
+      telephony.addNumber("home", home, 0)
     if mobile:
-      prio = 1 if "mobile" == mainnumber else 0
-      telephony.addNumber("mobile", mobile, prio)
+      telephony.addNumber("mobile", mobile, 0)
     if work:
-      prio = 1 if "work" == mainnumber else 0
-      telephony.addNumber("work", work, prio)
+      telephony.addNumber("work", work, 0)
     return telephony
 
   def _get_services(self, entry):
@@ -127,18 +109,18 @@ class ParsePersons(LDIFParser):
 
 
 class Import(object):
-  def get_books(self, filename, countryCode, vipGroups, debug=False):
+  def get_books(self, filename, vipGroups, debug=False):
     # parse groups
     with open(filename, "r") as f:
-      g = ParseGroups(f, vipGroups, debug=debug)
-      g.parse()
+      groups = ParseGroups(f, vipGroups, debug=debug)
+      groups.parse()
 
     # parse persons
     with open(filename, "r") as f:
-      p = ParsePersons(f, countryCode, g.vipGroups, debug=debug)
-      p.parse()
+      persons = ParsePersons(f, groups.vipGroups, debug=debug)
+      persons.parse()
     
     books = fritzbox.phonebook.Phonebooks()
-    books.addPhonebook(p.phoneBook)
+    books.addPhonebook(persons.phoneBook)
     return books
 

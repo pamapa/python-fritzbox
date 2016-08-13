@@ -18,9 +18,11 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #
 
+import codecs, re
 from datetime import datetime
 import tempfile, urllib, urllib2
 import xml.etree.ElementTree as ET
+from xml.dom.minidom import parseString
 
 # fritzbox
 import access
@@ -62,6 +64,26 @@ class Telephony(object):
   def hasNumbers(self):
     return True if len(self.numberDict) != 0 else False
 
+  def normalizeNumbers(self, countryCode):
+    for ntype in self.numberDict:
+      (number, nprio, vanity, quickdial) = self.numberDict[ntype]
+      number = re.sub(r"[^0-9\+ ]", "", number).strip()
+      number = re.sub(r"^00", "+", number)
+      number = re.sub(r"^0", countryCode, number)
+      self.numberDict[ntype] = (number, nprio, vanity, quickdial)
+
+  def calculateMainNumber(self):
+    prio_list = ["home", "mobile", "work"]
+    for p in prio_list:
+      found = False
+      for ntype in self.numberDict:
+        if p == ntype:
+          (number, nprio, vanity, quickdial) = self.numberDict[ntype]
+          self.numberDict[ntype] = (number, 1, vanity, quickdial)
+          found = True
+          break
+      if found: break
+          
   def getXML(self):
     xml = ET.Element("telephony")
     for ntype in self.numberDict:
@@ -84,6 +106,12 @@ class Contact(object):
     self.telephony = telephony
     self.mod_datetime  = mod_datetime
 
+  def normalizeNumbers(self, countryCode):
+    self.telephony.normalizeNumbers(countryCode)
+
+  def calculateMainNumber(self):
+    self.telephony.calculateMainNumber()
+
   def getXML(self):
     xml = ET.Element("contact")
     ET.SubElement(xml, "category").text = str(self.category)
@@ -104,6 +132,14 @@ class Phonebook(object):
   def addContact(self, contact):
     self.contactList.append(contact)
 
+  def normalizeNumbers(self, countryCode):
+    for contact in self.contactList:
+      contact.normalizeNumbers(countryCode)
+
+  def calculateMainNumber(self):
+    for contact in self.contactList:
+      contact.calculateMainNumber()
+
   def getXML(self):
     xml = ET.Element("phonebook")
     if self.name: xml.set("name", self.name)
@@ -120,12 +156,27 @@ class Phonebooks(object):
   def addPhonebook(self, phonebook):
     self.phonebookList.append(phonebook)
 
+  def normalizeNumbers(self, countryCode):
+    for book in self.phonebookList:
+      book.normalizeNumbers(countryCode)
+
+  def calculateMainNumber(self):
+    for book in self.phonebookList:
+      book.calculateMainNumber()
+
   def write(self, filename):
     xml = ET.Element("phonebooks")
     for book in self.phonebookList:
       xml.append(book.getXML())
     tree = ET.ElementTree(xml)
-    tree.write(filename, encoding="iso-8859-1", xml_declaration=True)
+    if False:    
+      tree.write(filename, encoding="iso-8859-1", xml_declaration=True)
+    else:
+      rough_string = ET.tostring(tree.getroot(), encoding="iso-8859-1", method="xml")
+      reparsed = parseString(rough_string)
+      pretty = unicode(reparsed.toprettyxml(indent="  ", encoding="iso-8859-1"), "iso-8859-1")
+      outfile = codecs.open(filename, 'w', encoding="iso-8859-1")
+      outfile.write(pretty)
 
   # sid: Login session ID
   # phonebookid: 0 for main phone book

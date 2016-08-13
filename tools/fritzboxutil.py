@@ -26,6 +26,7 @@ import fritzbox.phonebook
 import fritzbox.access
 import fritzbox.CSV
 import fritzbox.LDIF
+import fritzbox.VCF
 
 
 #
@@ -74,15 +75,20 @@ if __name__ == "__main__":
     for vip_group in args.vip_groups:
       vipGroups[vip_group] = []
     ext = os.path.splitext(args.input)[1].lower()
-    if ext == ".ldif":
-      ldif = fritzbox.LDIF.Import()
-      books = ldif.get_books(args.input, args.country_code, vipGroups, debug=args.debug)
-    elif ext == ".csv":
+    if ext == ".csv":
       csv = fritzbox.CSV.Import()
-      books = csv.get_books(args.input, args.country_code, debug=args.debug)
+      books = csv.get_books(args.input, vipGroups, debug=args.debug)
+    elif ext == ".ldif":
+      ldif = fritzbox.LDIF.Import()
+      books = ldif.get_books(args.input, vipGroups, debug=args.debug)
+    elif ext == ".vcf":
+      vcf = fritzbox.VCF.Import()
+      books = vcf.get_books(args.input, vipGroups, debug=args.debug)
     else:
       print("Error: File format not supported '%s'. Supported are LDIF and CSV." % ext)
       sys.exit(-1)
+    books.normalizeNumbers(args.country_code)
+    books.calculateMainNumber()
 
   try:
     if args.save:
@@ -103,5 +109,8 @@ if __name__ == "__main__":
       print("Login worked")
   except Exception, ex:
     print("Error: %s" % ex)
+    if False:    
+      import traceback
+      print(traceback.format_exc())
     sys.exit(-2)
 

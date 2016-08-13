@@ -141,7 +141,7 @@ def getEntityPerson(fields):
   return fritzbox.phonebook.Person(realName)
 
 
-def parse_csv(filename, delimiter, encoding, countryCode, debug=False):
+def parse_csv(filename, delimiter, encoding, debug=False):
   csv_file = open(filename, "rt")
   csv_reader = UnicodeDictReader(csv_file, delimiter=delimiter, encoding=encoding)
 
@@ -177,7 +177,6 @@ def parse_csv(filename, delimiter, encoding, countryCode, debug=False):
       if field.find("Nummer") != -1 and "Land" in fields:
         number = "+%s%s" % (fields["Land"], fields[field][1:])
         ntype = "work"
-      number = normalize_number(number, countryCode)
       if len(number) != 0:
         telephony.addNumber(ntype, number, 0)
 
@@ -190,10 +189,10 @@ def parse_csv(filename, delimiter, encoding, countryCode, debug=False):
 
 
 class Import(object):
-  def get_books(self, filename, countryCode, debug=False):
+  def get_books(self, filename, vipGroups, debug=False):
     delimiter = find_delimiter(filename, debug=debug)
     encoding = find_encoding(filename, delimiter, debug=debug)
-    book = parse_csv(filename, delimiter, encoding, countryCode, debug=debug)
+    book = parse_csv(filename, delimiter, encoding, debug=debug)
     books = fritzbox.phonebook.Phonebooks()
     books.addPhonebook(book)
     return books
