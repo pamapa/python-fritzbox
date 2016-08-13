@@ -18,7 +18,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #
 
-import os, sys, argparse, re
+import os, sys, argparse
 import codecs, csv
 from datetime import datetime
 
@@ -105,14 +105,6 @@ def find_encoding(filname, delimiter, debug=False):
   if debug: print("Correct encoding is %s" % next_encoding)
   csv_file.close()
   return next_encoding
-
-
-def normalize_number(number, countryCode):
-  if number:
-    number = re.sub(r"[^0-9\+ ]", "", number).strip()
-    number = re.sub(r"^00", "+", number)
-    number = re.sub(r"^0", countryCode, number)
-  return number
 
 
 def getEntityPerson(fields):
