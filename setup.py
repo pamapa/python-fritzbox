@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(name='python-fritzbox',
   version='0.1',
-  description='setup the Fritz!Box with python',
+  description='Automate the Fritz!Box with python',
   url='https://github.com/pamapa/python-fritzbox',
   author='Patrick Ammann',
   author_email='pammann@gmx.net',

@@ -14,7 +14,7 @@ cd python-fritzbox
 python setup.py install
 
 # For experts: instead of installing you can also make use of PYTHONHOME
-# by pointing to parent folder of the "python-fritzbox" folder.
+# by pointing to the "python-fritzbox" folder.
 
 # Fritz!Box is using its own signed certificate. The certificate is used to verify the
 # secure connection to the Fritz!Box.
