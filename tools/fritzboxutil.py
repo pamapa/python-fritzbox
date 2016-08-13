@@ -94,7 +94,7 @@ if __name__ == "__main__":
         vcf = fritzbox.VCF.Import()
         books = vcf.get_books(args.input, args.vip_groups, debug=args.debug)
       else:
-        print("Error: File format not supported '%s'. Supported are LDIF and CSV." % ext)
+        print("Error: File format not supported '%s'. Supported are *.ldif, *.csv and *.vcf files." % ext)
         sys.exit(-1)
     elif args.webdav_url:
       print("download phonebook from %s" % args.webdav_url)
