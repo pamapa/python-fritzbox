@@ -58,12 +58,12 @@ if __name__ == "__main__":
     help="vip group names")
 
   # download from WebDAV server (e.g. Nextcloud)
-  download = parser.add_argument_group("download")
-  download.add_argument("--webdav-url", dest="webdav_url",
+  downloadWebDAV = parser.add_argument_group("download WebDAV")
+  downloadWebDAV.add_argument("--webdav-url", dest="webdav_url",
     help="webdav URL, e.g. https://<HOST>/remote.php/dav/addressbooks/users/<LOGIN>/<BOOK>/")
-  download.add_argument("--webdav-username", dest="webdav_username",
+  downloadWebDAV.add_argument("--webdav-username", dest="webdav_username",
     help="webdav username")
-  download.add_argument("--webdav-password", dest="webdav_password",
+  downloadWebDAV.add_argument("--webdav-password", dest="webdav_password",
     help="webdav password")
 
   # upload
