@@ -54,10 +54,12 @@ fritzboxutil.py --save-cert
 fritzboxutil.py --input mybook.ldif --save mybook.xml
 
 # Download CardDAV and convert into Fritz!Box XML format
-fritzboxutil.py --webdav-url <YOUR URL> --webdav-username <USERNAME> --webdav-password <YOUR PASSWORD> --save mybook.xml
+fritzboxutil.py --webdav-url <YOUR URL> --webdav-username <USERNAME> --webdav-password <YOUR PASSWORD> \
+                --save mybook.xml
 
 # Automatically upload a LDIF address book to the Fritz!Box
 # phonebook-id: 0=main phone book, 1=next phone book in list
-fritzboxutil.py --input mybook.ldif --upload --hostname "https://fritz.box" --phonebook-id 1 --password <YOUR PASSWORD>
+fritzboxutil.py --input mybook.ldif \
+                --upload --hostname "https://fritz.box" --phonebook-id 1 --password <YOUR PASSWORD>
 ```
 
