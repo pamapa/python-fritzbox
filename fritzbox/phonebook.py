@@ -25,8 +25,8 @@ import xml.etree.ElementTree as ET
 from xml.dom.minidom import parseString
 
 # fritzbox
-import access
-import multipart
+import fritzbox.access
+import fritzbox.multipart
 
 
 class PhonebookException(Exception):
