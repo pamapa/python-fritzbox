@@ -2,6 +2,31 @@
 Automate the Fritz!Box by using python.
 
 
+## Features
+
+### fritzboxutil.py
+Import phonebooks
+- Import
+ - VCARD address books (VCF)
+ - Thunderbird address books (LDIF)
+ - Various other address book formats (CSV)
+ - Blacklists provided as address books (CSV) from tellows (http://www.tellows.com)
+- Download
+ - CardDAV servers using SabreDAV (Nextcloud, ...)
+- Save into Fritz!Box XML format for manual upload
+- Upload imported address book to the Fritz!Box
+
+### fritzboxktipp.py
+Download phone blacklist from ktipp (https://www.ktipp.ch), which is a phone spam blacklist periodically updated
+- Save into Fritz!Box XML format for manual upload
+- Upload fetched address book directly to the Fritz!Box
+ 
+
+## Tested hardware
+Tested with
+- Fritzbox 7390
+
+
 ## Install on Debian (jessie)
 ```bash
 sudo apt-get install python python-setuptools python-beautifulsoup python-ldap python-requests python-vobject
@@ -23,24 +48,16 @@ fritzboxutil.py --save-cert
 ```
 
 
-## Tools
+## Examples
+```bash
+# Convert a LDIF address book into Fritz!Box XML format:
+fritzboxutil.py --input mybook.ldif --save mybook.xml
 
-### fritzboxutil.py
-Import phonebooks
-- Import
- - Thunderbird address books (LDIF)
- - Various other address book formats (CSV)
- - Blacklists provied as address books from tellows (http://www.tellows.com)
-- Save into Fritz!Box XML format for manual upload
-- Upload import directly to Fritz!Box
+# Download CardDAV and convert into Fritz!Box XML format
+fritzboxutil.py --webdav-url <YOUR URL> --webdav-username <USERNAME> --webdav-password <YOUR PASSWORD> --save mybook.xml
 
-### fritzboxktipp.py
-Download phone blacklist from ktipp (https://www.ktipp.ch), which is a phone spam blacklist periodically updated
-- Save into Fritz!Box XML format for manual upload
-- Upload directly to Fritz!Box
- 
-
-## Tested hardware
-Tested with
-- Fritzbox 7390
+# Automatically upload a LDIF address book to the Fritz!Box
+# phonebook-id: 0=main phone book, 1=next phone book in list
+fritzboxutil.py --input mybook.ldif --upload --hostname "https://fritz.box" --phonebook-id 1 --password <YOUR PASSWORD>
+```
 
