@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-# python-fritzbox - setup the Fritz!Box with python
-# Copyright (C) 2015-2015 Patrick Ammann <pammann@gmx.net>
+# python-fritzbox - Automate the Fritz!Box with python
+# Copyright (C) 2015-2016 Patrick Ammann <pammann@gmx.net>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
