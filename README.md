@@ -4,22 +4,24 @@ Automate the Fritz!Box by using python.
 
 ## Features
 
-### fritzboxutil.py
+### Phone books
 Import phonebooks
 - Import
  - VCARD address books (VCF)
  - Thunderbird address books (LDIF)
  - Various other address book formats (CSV)
- - Blacklists provided as address books (CSV) from tellows (http://www.tellows.com)
 - Download
  - CardDAV servers using SabreDAV (Nextcloud, ...)
 - Save into Fritz!Box XML format for manual upload
 - Upload imported address book to the Fritz!Box
 
-### fritzboxktipp.py
-Download phone blacklist from ktipp (https://www.ktipp.ch), which is a phone spam blacklist periodically updated
-- Save into Fritz!Box XML format for manual upload
-- Upload fetched address book directly to the Fritz!Box
+### Phone spam blacklist
+- Import
+ - Blacklists provided as address books (CSV) from tellows (http://www.tellows.com)
+Download
+ - Download phone blacklist from ktipp (https://www.ktipp.ch), which is a phone spam blacklist periodically updated
+  - Save into Fritz!Box XML format for manual upload
+  - Upload fetched address book directly to the Fritz!Box
  
 
 ## Tested hardware
@@ -44,7 +46,7 @@ python setup.py install
 # Fritz!Box is using its own signed certificate. The certificate is used to verify the
 # secure connection to the Fritz!Box.
 # This command will download and store the certificate to /etc/ssl/localcerts.
-fritzboxutil.py --save-cert
+fritzboxphonebook.py --save-cert
 ```
 
 
