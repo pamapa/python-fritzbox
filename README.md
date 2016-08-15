@@ -38,7 +38,7 @@ cd python-fritzbox
 
 # This will install the files in /usr/local/lib/python2.7/dist-packages/
 # and add links in /usr/local/bin
-python setup.py install
+sudo python setup.py install
 
 # For experts: instead of installing you can also make use of PYTHONHOME
 # by pointing to the "python-fritzbox" folder.
@@ -46,7 +46,7 @@ python setup.py install
 # Fritz!Box is using its own signed certificate. The certificate is used to verify the
 # secure connection to the Fritz!Box.
 # This command will download and store the certificate to /etc/ssl/localcerts.
-fritzboxphonebook.py --save-cert
+sudo fritzboxphonebook.py --save-cert
 ```
 
 
