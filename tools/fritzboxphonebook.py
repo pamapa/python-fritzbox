@@ -112,7 +112,7 @@ if __name__ == "__main__":
       books.write(args.save)
     elif args.save_cert:
       print("save certificate")
-      session = fritzbox.access.Session(args.password, url=args.hostname, cert_verify=args.usecafile, debug=args.debug)
+      session = fritzbox.access.Session(args.password, url=args.hostname, cert_verify=args.cert_verify, debug=args.debug)
       session.save_certificate()
     elif args.upload:
       print("upload phonebook to %s" % args.hostname)
@@ -125,7 +125,7 @@ if __name__ == "__main__":
       print("Login worked")
   except Exception, ex:
     print("Error: %s" % ex)
-    if False:    
+    if args.debug:    
       import traceback
       print(traceback.format_exc())
     sys.exit(-2)
