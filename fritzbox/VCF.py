@@ -131,9 +131,9 @@ class Import(object):
         width, height = img.size
         if width != height:
           print("Warning: Photo not square: '%s' -> make it square" % img.size)
-          img = ImageOps.fit(img, max_size, Image.ANTIALIAS)
+          img = ImageOps.fit(img, max_size, Image.BICUBIC)
         elif img.size > max_size:
-          img = img.resize(max_size, Image.ANTIALIAS)
+          img = img.resize(max_size, Image.BICUBIC)
 
         # save          
         img.save(os.path.join(picture_path, fname))
