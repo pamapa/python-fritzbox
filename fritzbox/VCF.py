@@ -61,7 +61,14 @@ class Import(object):
           if len(card.n.value.given) != 0:
             realName += ", %s" % unicode(card.n.value.given, "utf-8")
       else:
-        realName = unicode(card.fn.value, "utf-8")
+        tmp = unicode(card.fn.value, "utf-8")
+        tmp_split = tmp.split(" ")
+        if len(tmp_split) == 2:
+          # FN = GivenName Family -> Family, GivenName
+          realName = "%s, %s" % (tmp_split[1], tmp_split[0])
+        else:
+          realName = tmp
+        print("Warning: N field missing, using FN field instead: '%s'" % realName)
       #print realName
 
       # category
@@ -112,17 +119,24 @@ class Import(object):
         fname = fname.lower()
         fname = "%s.jpg" % fname
 
-        if itype == "jpg":
-          with open(os.path.join(picture_path, fname), "w") as outfile:
-            outfile.write(card.photo.value)
-        else:
-          # FRITZ!Fon: picture must be jpg
-          tmp = os.path.join(picture_path, "tmp.%s" % imgtype)
-          with open(tmp, "w") as outfile:
-            outfile.write(card.photo.value)
-          im = Image.open(tmp)
-          os.remove(tmp)
-          im.save(os.path.join(picture_path, fname))
+        # copy into Image object
+        tmp = os.path.join(picture_path, "tmp.%s" % imgtype)
+        with open(tmp, "w") as outfile:
+          outfile.write(card.photo.value)
+        img = Image.open(tmp)
+        os.remove(tmp)
+
+        # make image fit on Fritz!Fon
+        max_size = (200, 200)
+        width, height = img.size
+        if width != height:
+          print("Warning: Photo not square: '%s' -> make it square" % img.size)
+          img = ImageOps.fit(img, max_size, Image.ANTIALIAS)
+        elif img.size > max_size:
+          img = img.resize(max_size, Image.ANTIALIAS)
+
+        # save          
+        img.save(os.path.join(picture_path, fname))
         imageURL = "file:///var/InternerSpeicher/FRITZ/fonpix/%s" % fname
 
       if telephony.hasNumbers():
