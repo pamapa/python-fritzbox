@@ -31,7 +31,7 @@ Tested with
 
 ## Install on Debian (jessie)
 ```bash
-sudo apt-get install python python-setuptools python-beautifulsoup python-ldap python-requests python-vobject
+sudo apt-get install python python-setuptools python-beautifulsoup python-ldap python-requests python-vobject python-pil
 
 git clone https://github.com/pamapa/python-fritzbox.git
 cd python-fritzbox

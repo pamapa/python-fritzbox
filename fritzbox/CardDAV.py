@@ -72,16 +72,20 @@ class Import(object):
     return hrefs
 
 
-  def _get_vcard(self, session, url_vcard, settings, debug=False):
-    if debug: print("_get_vcard(%s)" % url_vcard)
+  def _get_vcard_raw(self, session, url_vcard, settings, debug=False):
+    if debug: print("_get_vcard_raw(%s)" % url_vcard)
     response = session.get(url_vcard, headers=[], **settings)
     self._raise_for_status_code(response)
     #if debug: print("Response: %s" % response.content)
-    card = vobject.readOne(response.content)
+    return response.content
+
+  def _get_vcard(self, session, url_vcard, settings, debug=False):
+    raw = self._get_vcard_raw(session, url_vcard, settings, debug)
+    card = vobject.readOne(raw)
     return card
 
-
-  def get_books(self, url, username, password, auth="basic", verify=True, vipGroups=[], debug=False):
+  def get_books(self, url, username, password, vipGroups, picture_path,
+                conn_auth="basic", conn_verify=True, debug=False):
     if debug: print("get_books(%s)" % url)
 
     # url base
@@ -89,21 +93,23 @@ class Import(object):
     url_base = url_split.scheme + '://' + url_split.netloc
 
     # authentification
-    settings = {"verify": verify}
-    if auth == "basic":
+    settings = {"verify": conn_verify}
+    if conn_auth == "basic":
       settings["auth"] = (username, password)
-    elif auth == "digest":
+    elif conn_auth == "digest":
       from requests.auth import HTTPDigestAuth
       settings["auth"] = HTTPDigestAuth(user, passwd)
 
     session = requests.session()
     xml = self._get_xml(session, url, settings, debug)
     hrefs = self._process_xml(xml, debug)
-    cards = []    
+
+    # convert into vcard objects
+    cards = []
     for href in hrefs.keys():
       cards.append(self._get_vcard(session, url_base + href, settings, debug))
 
     vcf = fritzbox.VCF.Import()
-    books = vcf.get_books_by_cards(cards, vipGroups, debug=debug)
+    books = vcf.get_books_by_cards(cards, vipGroups, picture_path, debug=debug)
     return books
 

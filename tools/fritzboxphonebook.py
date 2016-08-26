@@ -66,6 +66,12 @@ if __name__ == "__main__":
   downloadWebDAV.add_argument("--webdav-password", dest="webdav_password",
     help="webdav password")
 
+  # misc
+  misc = parser.add_argument_group("misc")
+  misc.add_argument("--save-pictures", dest="save_pictures", action="store_true", default=False,
+    help="Save pictures within VCF to local fonpix folder. "
+         "The pictures must be uploaded manually to the Fritz!Box NAS (https://fritz.nas path=/fritz.nas/FRITZ/fonpix")
+
   # upload
   upload = parser.add_argument_group("upload")
   upload.add_argument("--hostname", default="https://fritz.box",
@@ -78,6 +84,13 @@ if __name__ == "__main__":
     help="do not use certificate to verify secure connection. Default is with certificate")
 
   args = parser.parse_args()
+
+  picture_path = None
+  if args.save_pictures:
+    if args.save: picture_path = os.path.dirname(args.save)
+    else: picture_path = "."
+    picture_path = os.path.join(picture_path, "fonpix")
+    #print("save pictures to %s" % picture_path)
 
   try:
     books = None
@@ -92,7 +105,7 @@ if __name__ == "__main__":
         books = ldif.get_books(args.input, args.vip_groups, debug=args.debug)
       elif ext == ".vcf":
         vcf = fritzbox.VCF.Import()
-        books = vcf.get_books(args.input, args.vip_groups, debug=args.debug)
+        books = vcf.get_books(args.input, args.vip_groups, picture_path, debug=args.debug)
       else:
         print("Error: File format not supported '%s'. Supported are *.ldif, *.csv and *.vcf files." % ext)
         sys.exit(-1)
@@ -100,7 +113,7 @@ if __name__ == "__main__":
       print("download phonebook from %s" % args.webdav_url)
       dav = fritzbox.CardDAV.Import()
       books = dav.get_books(args.webdav_url, args.webdav_username, args.webdav_password,
-                            vipGroups=args.vip_groups, debug=args.debug)
+                            args.vip_groups, picture_path, debug=args.debug)
 
     # post process
     if books:
