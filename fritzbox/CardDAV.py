@@ -49,26 +49,27 @@ class Import(object):
     root = ET.XML(xml)
     #if debug: print("root: %s" % ET.tostring(root, "utf-8"))
     hrefs = dict()
-    for child in root:
-      if child.tag != namespace + "response":
+    for response in root:
+      if response.tag != namespace + "response":
         continue
       #if len(hrefs) == 10: break
       href = ""
       etag = ""
-      insert = False
-      for response in child:
-        if response.tag == namespace + "href":
-          href = response.text
-        for refprop in response:
+      found = False
+      for child in response:
+        if child.tag == namespace + "href":
+          href = child.text
+        for refprop in child:
           for props in refprop:
             if props.tag == namespace + "getcontenttype":
               if (props.text == "text/vcard" or props.text == "text/vcard; charset=utf-8" or
                   props.text == "text/x-vcard" or props.text == "text/x-vcard; charset=utf-8"):
-                insert = True
+                found = True
             elif props.tag == namespace + "getetag":
                 etag = props.text
-          if insert:
+          if found:
             hrefs[href] = etag
+            break
     return hrefs
 
 
