@@ -40,18 +40,18 @@ if __name__ == "__main__":
   # action
   main = parser.add_mutually_exclusive_group(required=True)
   main.add_argument("--upload", action="store_true", default=False,
-    help="upload phonebook specified with INPUT to Fritz!Box")
+    help="upload phonebook specified with LOAD to Fritz!Box")
   main.add_argument("--save",
-    help="save phonebook specified with INPUT to local file")
+    help="save phonebook specified with LOAD to local file")
   main.add_argument("--save-cert", dest="save_cert", action="store_true", default=False,
     help="save certificate")
   main.add_argument("--test-access", dest="test_access", action="store_true", default=False,
     help="test access to Fritz!Box")
 
   # file import
-  fileImport = parser.add_argument_group("file import")
-  fileImport.add_argument("--input",
-    help="input filename")
+  fileImport = parser.add_argument_group("phonebook load")
+  fileImport.add_argument("--load",
+    help="load phonebook from filename")
   fileImport.add_argument("--country-code", dest="country_code", default="+41",
     help="country code, e.g. +41")
   fileImport.add_argument("--vip-groups", dest="vip_groups", nargs="+", default=["Family"],
@@ -94,18 +94,18 @@ if __name__ == "__main__":
 
   try:
     books = None
-    if args.input:
-      print("read phonebook from %s" % args.input)
-      ext = os.path.splitext(args.input)[1].lower()
+    if args.load:
+      print("load phonebook from %s" % args.load)
+      ext = os.path.splitext(args.load)[1].lower()
       if ext == ".csv":
         csv = fritzbox.CSV.Import()
-        books = csv.get_books(args.input, args.vip_groups, debug=args.debug)
+        books = csv.get_books(args.load, args.vip_groups, debug=args.debug)
       elif ext == ".ldif":
         ldif = fritzbox.LDIF.Import()
-        books = ldif.get_books(args.input, args.vip_groups, debug=args.debug)
+        books = ldif.get_books(args.load, args.vip_groups, debug=args.debug)
       elif ext == ".vcf":
         vcf = fritzbox.VCF.Import()
-        books = vcf.get_books(args.input, args.vip_groups, picture_path, debug=args.debug)
+        books = vcf.get_books(args.load, args.vip_groups, picture_path, debug=args.debug)
       else:
         print("Error: File format not supported '%s'. Supported are *.ldif, *.csv and *.vcf files." % ext)
         sys.exit(-1)

@@ -6,12 +6,12 @@ Automate the Fritz!Box by using python.
 
 ### Phone books
 Import phonebooks
-- Import
+- Load
  - VCARD address books (VCF)
  - Thunderbird address books (LDIF)
  - Various other address book formats (CSV)
 - Download
- - CardDAV servers using SabreDAV (Nextcloud, ...)
+ - From CardDAV servers using SabreDAV (Nextcloud, ...)
 - Save into Fritz!Box XML format for manual upload
 - Upload imported address book to the Fritz!Box
 
@@ -53,7 +53,7 @@ sudo fritzboxphonebook.py --save-cert
 ## Examples
 ```bash
 # Convert a LDIF address book into Fritz!Box XML format:
-fritzboxphonebook.py --input mybook.ldif --save mybook.xml
+fritzboxphonebook.py --load mybook.ldif --save mybook.xml
 
 # Download CardDAV and convert into Fritz!Box XML format
 fritzboxphonebook.py --webdav-url <YOUR URL> --webdav-username <USERNAME> --webdav-password <YOUR PASSWORD> \
@@ -61,7 +61,7 @@ fritzboxphonebook.py --webdav-url <YOUR URL> --webdav-username <USERNAME> --webd
 
 # Automatically upload a LDIF address book to the Fritz!Box
 # phonebook-id: 0=main phone book, 1=next phone book in list
-fritzboxphonebook.py --input mybook.ldif \
+fritzboxphonebook.py --load mybook.ldif \
                      --upload --hostname "https://fritz.box" --phonebook-id 1 --password <YOUR PASSWORD>
 ```
 
