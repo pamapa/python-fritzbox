@@ -79,7 +79,7 @@ if __name__ == "__main__":
   upload.add_argument("--password",
     help="password")
   upload.add_argument("--phonebook-id", dest="phonebook_id", default=0,
-    help="phonebook id")
+    help="phonebook id: 0 for main phone book, 1 for next phone book in list, etc...")
   upload.add_argument("--no-cert-verify", dest="cert_verify", action="store_false", default=True,
     help="do not use certificate to verify secure connection. Default is with certificate")
 
