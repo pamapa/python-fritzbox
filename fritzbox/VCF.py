@@ -22,7 +22,7 @@
 import os, re
 import codecs
 import vobject
-from PIL import Image
+from PIL import Image, ImageOps
 
 # fritzbox
 import fritzbox.phonebook
@@ -127,12 +127,13 @@ class Import(object):
         os.remove(tmp)
 
         # make image fit on Fritz!Fon
-        max_size = (200, 200)
+        max_size = (128, 128)
         width, height = img.size
         if width != height:
-          print("Warning: Photo not square: '%s' -> make it square" % img.size)
+          print("Warning: Photo not square (%s %s): make it square with %s" % (realName, img.size, max_size))
           img = ImageOps.fit(img, max_size, Image.BICUBIC)
         elif img.size > max_size:
+          print("Warning: Photo too big (%s %s): resize to %s" % (realName, img.size, max_size))
           img = img.resize(max_size, Image.BICUBIC)
 
         # save          
