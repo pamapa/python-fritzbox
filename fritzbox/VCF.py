@@ -111,7 +111,7 @@ class Import(object):
         if not os.path.exists(picture_path):
           os.makedirs(picture_path)
 
-        # try to have nice a filename
+        # try to have a nice filename (format must be jpg)
         fname = realName.replace(u"ä", "ae").replace(u"ö", "oe").replace(u"ü", "ue")
         fname = fname.replace(u"é", "e").replace(u"è", "e").replace(u"ç", "c")
         fname = fname.replace(", ", "_")
