@@ -1,7 +1,5 @@
-#!/usr/bin/env python
-
 # python-fritzbox - Automate the Fritz!Box with python
-# Copyright (C) 2015-2016 Patrick Ammann <pammann@gmx.net>
+# Copyright (C) 2015-2017 Patrick Ammann <pammann@gmx.net>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -19,7 +17,8 @@
 #
 
 import os, argparse
-import urlparse, urllib2, urllib, hashlib
+import hashlib
+import urllib.parse, urllib.request
 import xml.etree.ElementTree as ET
 import ssl
 
@@ -35,7 +34,7 @@ class Session(object):
 
   def __init__(self, password, url="https://fritz.box", cert_verify=True, debug=False):
     self.password = password
-    self.url = urlparse.urlparse(url)
+    self.url = urllib.parse.urlparse(url)
     self.sid = None
     self.debug = debug
     self.cafile = None
@@ -47,7 +46,7 @@ class Session(object):
   def save_certificate(self):
     port = self.url.port if self.url.port else 443
     adr = (self.url.hostname, port)
-    if self.debug: print "save_certificate of %s to %s" % (str(adr), self.cafile)
+    if self.debug: print("save_certificate of %s to %s" % (str(adr), self.cafile))
     capath = os.path.dirname(self.cafile)
     if not os.path.exists(capath): os.makedirs(capath)
     cert = ssl.get_server_certificate(adr)
@@ -60,18 +59,18 @@ class Session(object):
       uri = "%s/login_sid.lua" % self.url.geturl()
     else:
       uri = "%s/login_sid.lua?sid=%s" % (self.url.geturl(), self.sid)
-    if self.debug: print "uri: " + uri
+    if self.debug: print("uri: %s" % uri)
 
     if not self.cafile:
       # fritzbox uses self signed certificates :-(
       print("Warning: Using unverified SSL. Save the certificate of your firtzbox locally first!")
       ssl._create_default_https_context = ssl._create_unverified_context
     else:
-      if self.debug: print "cafile: " + self.cafile
+      if self.debug: print("cafile: %s" % self.cafile)
 
-    resp = urllib2.urlopen(uri, cafile=self.cafile)
+    resp = urllib.request.urlopen(uri, cafile=self.cafile)
     data = resp.read()
-    if self.debug: print "data with sid: " + data
+    if self.debug: print("data with sid: %s" % data)
 
     doc = ET.fromstring(data)
     self.sid = doc.find("SID").text
@@ -79,22 +78,22 @@ class Session(object):
       return self.sid
 
     challenge = doc.find("Challenge").text
-    if self.debug: print "challenge: " + challenge
+    if self.debug: print("challenge: %s" % challenge)
 
     text = "%s-%s" % (challenge, self.password)
     text = text.encode("utf-16le")
     response = "%s-%s" % (challenge, hashlib.md5(text).hexdigest())
-    post_data = urllib.urlencode({'response': response, 'page': ''})
+    post_data = urllib.parse.urlencode({'response': response, 'page': ''})
 
     uri = "%s/login_sid.lua" % self.url.geturl()
-    if self.debug: print "req uri:%s data:%s" % (uri, post_data)
-    resp = urllib2.urlopen(uri, post_data, cafile=self.cafile)
+    if self.debug: print("req uri: %s data: %s" % (uri, post_data))
+    resp = urllib.request.urlopen(uri, post_data.encode(), cafile=self.cafile)
     data = resp.read()
-    if self.debug: print "data from login: %s %s" % (resp.info(), data)
+    if self.debug: print("data from login: %s %s" % (resp.info(), data))
 
     doc = ET.fromstring(data)
     self.sid = doc.find("SID").text
-    if self.debug: print "found sid: %s" % self.sid
+    if self.debug: print("found sid: %s" % self.sid)
 
     if self.sid == "0000000000000000": raise SessionException("login failed")
     return self.sid
@@ -102,32 +101,22 @@ class Session(object):
 
   def post(self, path, headers, body):
     uri = "%s/%s" % (self.url.geturl(), path)
-    if self.debug: print "post: uri=%s, headers=%s" % (uri, headers)
+    if self.debug: print("post: uri=%s, headers=%s" % (uri, headers))
     request = urllib2.Request(uri)
     for header in headers:
       request.add_header(header, headers[header])
     request.add_data(body)
     resp = urllib2.urlopen(request, cafile=self.cafile)
-    if self.debug: print "resp: %s" % resp.info()
+    if self.debug: print("resp: %s" % resp.info())
     return resp
 
 
   def get(self, path, query):
     uri = "%s/%s" % (self.url.geturl(), path)
-    if self.debug: print "get: uri=%s, query=%s" % (uri, query)
+    if self.debug: print("get: uri=%s, query=%s" % (uri, query))
     data = urllib.urlencode(query)
     request = urllib2.Request(uri, data)
     resp = urllib2.urlopen(request, cafile=self.cafile)
-    if self.debug: print "resp: %s" % resp.info()
+    if self.debug: print("resp: %s" % resp.info())
     return resp
-
-
-if __name__ == "__main__":
-  parser = argparse.ArgumentParser(description="Test login")
-  parser.add_argument("--password", help="password", required=True)
-  args = parser.parse_args()
-
-  session = Session(args.password, debug=True)
-  #session.save_certificate()
-  print session.get_sid()
 

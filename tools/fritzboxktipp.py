@@ -1,7 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # python-fritzbox - Automate the Fritz!Box with python
-# Copyright (C) 2015-2016 Patrick Ammann <pammann@gmx.net>
+# Copyright (C) 2015-2017 Patrick Ammann <pammann@gmx.net>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -19,8 +19,8 @@
 #
 
 import os, sys, argparse, re
-from BeautifulSoup import BeautifulSoup
-import urllib2
+from bs4 import BeautifulSoup
+import urllib.request
 from datetime import datetime
 
 # fritzbox
@@ -77,7 +77,7 @@ def extract_numbers(data):
   return ret
 
 def extract_name(data):
-  s = unicode(data)
+  s = data
   s = s.replace("\n", "").replace("\r", "")
   s = re.sub(r'<[^>]*>', " ", s) # remove tags
   s = s.replace("&amp", "&")
@@ -89,8 +89,9 @@ def extract_name(data):
 
 def fetch_page(page_nr):
   if g_debug: print("fetch_page: " + str(page_nr))
-  page = urllib2.urlopen("https://www.ktipp.ch/service/warnlisten/detail/?warnliste_id=7&ajax=ajax-search-form&page=" + str(page_nr), timeout=10)
-  return page.read()
+  page = urllib.request.urlopen("https://www.ktipp.ch/service/warnlisten/detail/?warnliste_id=7&ajax=ajax-search-form&page=" + str(page_nr), timeout=10)
+  ret = page.read()
+  return str(ret)
 
 def extract_str(data, start_str, end_str, error_msg):
   s = data.find(start_str)
@@ -109,7 +110,7 @@ def parse_page(soup):
 
   for e in list:
     numbers = extract_numbers(e.strong.contents[0])
-    name = extract_name(e.p)
+    name = extract_name(str(e.p))
     for n in numbers:
       ret.append({"number":n, "name":name})
   #if g_debug: print("parse_page done")
@@ -118,7 +119,7 @@ def parse_page(soup):
 def parse_pages(content):
   ret = []
 
-  soup = BeautifulSoup(content)
+  soup = BeautifulSoup(content, "lxml")
   tmp = str(soup.findAll("li")[-1])
   max_page_str = extract_str(tmp, "ajaxPagerWarnlisteLoadIndex(", ")", "Can't extract max pages")
   last_page = int(max_page_str)
@@ -131,9 +132,7 @@ def parse_pages(content):
       sys.stdout.write("Fetch page %s of %s\r" % (p, last_page))
       sys.stdout.flush()
     content = fetch_page(p)
-    #if g_debug: print("fetch done, BeautifulSoup...")
-    soup = BeautifulSoup(content)
-    #if g_debug: print("BeautifulSoup done")
+    soup = BeautifulSoup(content, "lxml")
     ret.extend(parse_page(soup))
   return ret
 
@@ -204,10 +203,10 @@ if __name__ == "__main__":
   g_debug = args.debug
 
   if not g_debug:
-    sys.stdout.write("Fetch page 0 of ?\r")
+    sys.stdout.write("Fetch page 0\r")
     sys.stdout.flush()
   content = fetch_page(0)
-  source_date = unicode(extract_str(content, "Letzte Aktualisierung:", "<", "Can't extract creation date"))
+  source_date = extract_str(content, "Letzte Aktualisierung:", "<", "Can't extract creation date")
   if g_debug: print("Source date: %s" % source_date)
 #  if last_update == source_date:
 #    # we already have this version
@@ -241,7 +240,7 @@ if __name__ == "__main__":
       print("upload phonebook to %s..." % args.hostname)
       session = fritzbox.access.Session(args.password, args.hostname, cert_verify=args.cert_verify, debug=args.debug)
       books.upload(session, args.phonebook_id)
-  except Exception, ex:
+  except Exception as ex:
     print("Error: %s" % ex)
     sys.exit(-2)
 

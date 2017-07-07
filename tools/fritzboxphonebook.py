@@ -1,7 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # python-fritzbox - Automate the Fritz!Box with python
-# Copyright (C) 2015-2016 Patrick Ammann <pammann@gmx.net>
+# Copyright (C) 2015-2017 Patrick Ammann <pammann@gmx.net>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -19,7 +19,6 @@
 #
 
 import os, sys, argparse
-import urlparse
 
 # fritzbox modules
 import fritzbox.phonebook
@@ -136,7 +135,7 @@ if __name__ == "__main__":
       session = fritzbox.access.Session(args.password, url=args.hostname, cert_verify=args.cert_verify, debug=args.debug)
       session.get_sid()
       print("Login worked")
-  except Exception, ex:
+  except Exception as ex:
     print("Error: %s" % ex)
     if args.debug:    
       import traceback

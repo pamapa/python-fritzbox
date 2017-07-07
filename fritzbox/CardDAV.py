@@ -1,7 +1,5 @@
-#!/usr/bin/env python
-
 # python-fritzbox - Automate the Fritz!Box with python
-# Copyright (C) 2015-2016 Patrick Ammann <pammann@gmx.net>
+# Copyright (C) 2015-2017 Patrick Ammann <pammann@gmx.net>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -18,7 +16,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #
 
-import requests, urlparse
+import requests, urllib.parse
 import xml.etree.ElementTree as ET
 import vobject
 
@@ -31,7 +29,7 @@ class Import(object):
   def _raise_for_status_code(self, resp):
     if 400 <= resp.status_code < 500 or 500 <= resp.status_code < 600:
       msg  = "Error code: " + str(resp.status_code) + "\n"
-      msg += resp.content
+      msg += resp.content.decode()
       raise requests.exceptions.HTTPError(msg)
 
 
@@ -78,7 +76,7 @@ class Import(object):
     response = session.get(url_vcard, headers=[], **settings)
     self._raise_for_status_code(response)
     #if debug: print("Response: %s" % response.content)
-    ret = vobject.readOne(response.content)
+    ret = vobject.readOne(response.content.decode())
     return ret
 
 
@@ -87,7 +85,7 @@ class Import(object):
     if debug: print("get_books(%s)" % url)
 
     # url base
-    url_split = urlparse.urlparse(url)
+    url_split = urllib.parse.urlparse(url)
     url_base = url_split.scheme + '://' + url_split.netloc
 
     # authentification

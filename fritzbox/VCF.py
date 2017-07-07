@@ -1,8 +1,7 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # python-fritzbox - Automate the Fritz!Box with python
-# Copyright (C) 2015-2016 Patrick Ammann <pammann@gmx.net>
+# Copyright (C) 2015-2017 Patrick Ammann <pammann@gmx.net>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -55,13 +54,13 @@ class Import(object):
       # name
       if hasattr(card, "n"):
         if len(card.n.value.family) == 0:
-          realName = unicode(card.n.value.given, "utf-8")
+          realName = card.n.value.given
         else:
-          realName = unicode(card.n.value.family, "utf-8")
+          realName = card.n.value.family
           if len(card.n.value.given) != 0:
-            realName += ", %s" % unicode(card.n.value.given, "utf-8")
+            realName += ", %s" % card.n.value.given
       else:
-        tmp = unicode(card.fn.value, "utf-8")
+        tmp = card.fn.value
         tmp_split = tmp.split(" ")
         if len(tmp_split) == 2:
           # FN = GivenName Family -> Family, GivenName
@@ -105,7 +104,7 @@ class Import(object):
         elif itype == "png":
           imgtype = "png"
         else:
-          print("Error: Unknown photo type: '%s'" % itype)
+          print("Error: Not supported photo type: '%s'" % itype)
           continue
 
         if not os.path.exists(picture_path):
@@ -121,7 +120,7 @@ class Import(object):
 
         # copy into Image object
         tmp = os.path.join(picture_path, "tmp.%s" % imgtype)
-        with open(tmp, "w") as outfile:
+        with open(tmp, "wb") as outfile:
           outfile.write(card.photo.value)
         img = Image.open(tmp)
         os.remove(tmp)

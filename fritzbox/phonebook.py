@@ -1,7 +1,5 @@
-#!/usr/bin/env python
-
 # python-fritzbox - Automate the Fritz!Box with python
-# Copyright (C) 2015-2016 Patrick Ammann <pammann@gmx.net>
+# Copyright (C) 2015-2017 Patrick Ammann <pammann@gmx.net>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -20,12 +18,11 @@
 
 import codecs, re
 from datetime import datetime
-import tempfile, urllib, urllib2
+import tempfile, urllib
 import xml.etree.ElementTree as ET
 from xml.dom.minidom import parseString
 
 # fritzbox
-import fritzbox.access
 import fritzbox.multipart
 
 
@@ -174,9 +171,9 @@ class Phonebooks(object):
     else:
       rough_string = ET.tostring(tree.getroot(), encoding="iso-8859-1", method="xml")
       reparsed = parseString(rough_string)
-      pretty = unicode(reparsed.toprettyxml(indent="  ", encoding="iso-8859-1"), "iso-8859-1")
-      outfile = codecs.open(filename, 'w', encoding="iso-8859-1")
-      outfile.write(pretty)
+      pretty = reparsed.toprettyxml(indent="  ", encoding="iso-8859-1").decode("iso-8859-1")
+      with open(filename, 'w', encoding="iso-8859-1") as outfile:
+        outfile.write(pretty)
 
   # sid: Login session ID
   # phonebookid: 0 for main phone book
@@ -200,28 +197,7 @@ class Phonebooks(object):
     if html.find("Das Telefonbuch der FRITZ!Box wurde wiederhergestellt.") != 0:
       pass
     elif html.find("Beim Wiederherstellen des Telefonbuchs ist ein Fehler aufgetreten.") != 0:
-      print "Error: uploading failed"
+      print("Error: uploading failed")
     else:
-      print "Warning: unknown answer:\n%s" % html
-
-
-# Only demo code, this module is used elsewhere
-if __name__ == "__main__":
-  mod_datetime = datetime.now()
-
-  telephony1 = Telephony()
-  telephony1.addNumber("home", "+12345678")
-  contact1 = Contact(0, Person("Mr. X"), telephony1, mod_datetime)
-
-  telephony2 = Telephony()
-  telephony2.addNumber("work", "+1122334455")
-  contact2 = Contact(1, Person("Mr. Y"), telephony2, mod_datetime)
-
-  book = Phonebook()
-  book.addContact(contact1)
-  book.addContact(contact2)
-
-  books = Phonebooks()
-  books.addPhonebook(book)
-  print str(books)
+      print("Warning: unknown answer:\n%s" % html)
 
