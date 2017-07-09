@@ -18,8 +18,8 @@ Automate the Fritz!Box by using python.
 - Import
   - Blacklists provided as address books (CSV) from tellows (http://www.tellows.com)
 - Download phone blacklist from ktipp (https://www.ktipp.ch), which is a phone spam blacklist periodically updated
-  - Save into Fritz!Box XML format for manual upload
-  - Upload fetched address book directly to the Fritz!Box
+- Save into Fritz!Box XML format for manual upload
+- Upload fetched address book directly to the Fritz!Box
  
 
 ## Tested hardware
