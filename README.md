@@ -11,8 +11,8 @@ Automate the Fritz!Box by using python.
   - Various other address book formats (CSV)
 - Download
   - From CardDAV servers using SabreDAV (Nextcloud, ...)
-  - Save into Fritz!Box XML format for manual upload
-  - Upload imported address book to the Fritz!Box
+- Save into Fritz!Box XML format for manual upload
+- Upload imported address book to the Fritz!Box
 
 ### Phone spam blacklist
 - Import
