@@ -29,7 +29,7 @@ Tested with
 
 ## Install on Debian (jessie)
 ```bash
-sudo apt-get install python python-setuptools python-beautifulsoup python-ldap python-requests python-vobject python-pil
+sudo apt-get install python3 python3-bs4 python3-ldif3 python3-vobject python3-setuptools python3-pil
 
 git clone https://github.com/pamapa/python-fritzbox.git
 cd python-fritzbox
