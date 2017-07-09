@@ -38,13 +38,17 @@ class Import(object):
 
 
   def get_books_by_cards(self, cards, vipGroups, picture_path, debug=False):
-    # map CardDav type to Fritz!Box type
-    map_number_names = {
+    # phone number: CardDav to Fritz!Box
+    map_number_types = {
       "work":   "work",
       "home":   "home",
       "home\\": "home",
       "cell":   "mobile",
       "fax":    "fax"
+    }
+    # email: CardDav to Fritz!Box
+    map_email_types = {
+      "home":   "private"
     }
 
     book = fritzbox.phonebook.Phonebook()
@@ -78,19 +82,33 @@ class Import(object):
             category = 1
             break
 
-      # find numbers and categorize to "home|mobile|work|fax"
+      # find phone number and categorize to "home|mobile|work|fax"
       telephony = fritzbox.phonebook.Telephony()
       for child in card.getChildren():
         if child.name.lower() != "tel":
           continue
         itype = child.type_param.lower()
-        if not itype in map_number_names:
+        if not itype in map_number_types:
           print("Error: Unknown type: '%s'" % itype)
           continue
-        ntype = map_number_names[itype]
+        ntype = map_number_types[itype]
         number = child.value
         if len(number) != 0:
           telephony.addNumber(ntype, number, 0)
+
+      # find email
+      services = fritzbox.phonebook.Services()
+      for child in card.getChildren():
+        if child.name.lower() != "email":
+          continue
+        itype = child.type_param.lower()
+        if not itype in map_email_types:
+          #print("Error: Unknown type: '%s'" % itype)
+          continue
+        etype = map_email_types[itype]
+        email = child.value
+        if len(email) != 0:
+          services.addEmail(etype, email)
 
       # picture
       imageURL = None
@@ -141,7 +159,7 @@ class Import(object):
 
       if telephony.hasNumbers():
         person = fritzbox.phonebook.Person(realName, imageURL)
-        contact = fritzbox.phonebook.Contact(category, person, telephony)
+        contact = fritzbox.phonebook.Contact(category, person, telephony, services)
         book.addContact(contact)
     
     books = fritzbox.phonebook.Phonebooks()

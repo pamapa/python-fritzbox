@@ -55,7 +55,7 @@ class Telephony(object):
   # quickdial: None or 1-99
   def addNumber(self, ntype, number, prio=0, vanity=None, quickdial=None):
     if ntype != "home" and ntype != "mobile" and ntype != "work" and ntype != "fax":
-      raise PhonebookException("invalid type: '%s'" % ntype)
+      raise PhonebookException("invalid number type: '%s'" % ntype)
     self.numberDict[ntype] = (number, prio, vanity, quickdial)
 
   def hasNumbers(self):
@@ -92,15 +92,34 @@ class Telephony(object):
     return xml
 
 
+class Services(object):
+  def __init__(self):
+    self.emailDict = {}
+
+  def addEmail(self, etype, email):
+    if etype != "private":
+      raise PhonebookException("invalid email type: '%s'" % etype)
+    self.emailDict[etype] = email
+
+  def getXML(self):
+    xml = ET.Element("services")
+    for etype in self.emailDict:
+      email = self.emailDict[etype]
+      x = ET.SubElement(xml, "email", classifier=etype)
+      x.text = email
+    return xml
+
+
 class Contact(object):
   # category: Very important person: 1, else 0
   # person: class Person
   # telephony: class Telephony
   # mod_datetime: datetime.datetime.now()
-  def __init__(self, category, person, telephony, mod_datetime=None, service=None, setup=None):
+  def __init__(self, category, person, telephony, services=None, setup=None, mod_datetime=None):
     self.category = category
     self.person = person
     self.telephony = telephony
+    self.services = services
     self.mod_datetime  = mod_datetime
 
   def normalizeNumbers(self, countryCode):
@@ -114,7 +133,10 @@ class Contact(object):
     ET.SubElement(xml, "category").text = str(self.category)
     xml.append(self.person.getXML())
     xml.append(self.telephony.getXML())
-    ET.SubElement(xml, "services") # not used yet
+    if self.services:
+      xml.append(self.services.getXML())
+    else:
+      ET.SubElement(xml, "services")
     ET.SubElement(xml, "setup") # not used yet
     if self.mod_datetime: ET.SubElement(xml, "mod_time").text = self.mod_datetime.strftime("%s")
     return xml

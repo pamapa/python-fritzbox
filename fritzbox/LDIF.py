@@ -73,16 +73,13 @@ class ParsePersons():
     #debug(entry)
     cn = self._get_value(entry, "cn")
 
-    home = self._get_value(entry, "homePhone")
-    mobile = self._get_value(entry, "mobile")
-    work = self._get_value(entry, "telephoneNumber")
-    if home and len(home) > 0 or mobile and len(mobile) > 0 or work and len(work) > 0:
-      contact = fritzbox.phonebook.Contact(
-        self._get_category(entry, cn),
-        self._get_person(entry, cn),
-        self._get_telephony(home, mobile, work),
-        service=self._get_services(entry)
-      )
+    category = self._get_category(entry, cn)
+    telephony = self._get_telephony(entry)
+    services = self._get_services(entry)
+
+    if telephony.hasNumbers():
+      person = self._get_person(entry, cn)
+      contact = fritzbox.phonebook.Contact(category, person, telephony, services)
       self._phoneBook.addContact(contact)
 
   def _get_value(self, entry, name):
@@ -108,19 +105,32 @@ class ParsePersons():
           realName += ", %s" % fname
       return fritzbox.phonebook.Person(realName)
 
-  def _get_telephony(self, home, mobile, work):    
+  def _get_telephony(self, entry):
     telephony = fritzbox.phonebook.Telephony()
-    if home:
-      telephony.addNumber("home", home, 0)
-    if mobile:
-      telephony.addNumber("mobile", mobile, 0)
-    if work:
-      telephony.addNumber("work", work, 0)
+    # LDIF to Fritz!Box
+    map_number_types = {
+      "telephoneNumber": "work",
+      "homePhone":       "home",
+      "mobile":          "mobile"
+    }
+    for itype in map_number_types:
+      number = self._get_value(entry, itype)
+      if number and len(number) > 0:
+        telephony.addNumber(map_number_types[itype], number, 0)
     return telephony
 
   def _get_services(self, entry):
-    # TODO self._get_value(entry, "mail")
-    return None
+    services = fritzbox.phonebook.Services()
+    # email: LDIF to Fritz!Box
+    map_email_types = {
+      "mail":               "private",
+      "mozillaSecondEmail": "private"
+    }
+    for itype in map_email_types:
+      email = self._get_value(entry, itype)
+      if email and len(email) > 0:
+        services.addEmail(map_email_types[itype], email)
+    return services
 
 
 class Import(object):

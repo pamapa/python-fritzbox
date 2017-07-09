@@ -129,14 +129,13 @@ def parse_csv(filename, delimiter, encoding, debug=False):
     person = getEntityPerson(fields)
     #if debug: print(name)
 
-    # map CSV type to Fritz!Box type
+    # phone number: CardDav to Fritz!Box
     map_number_names = {
       "work phone":"work",
       "home phone":"home",
       "mobile":"mobile",
       "fax":"fax"
     }
-
     # find numbers and categorize to "home|mobile|work|fax"
     telephony = fritzbox.phonebook.Telephony()
     for field in fields:
@@ -154,6 +153,24 @@ def parse_csv(filename, delimiter, encoding, debug=False):
         ntype = "work"
       if len(number) != 0:
         telephony.addNumber(ntype, number, 0)
+
+
+    # email: CardDav to Fritz!Box
+    map_email_types = {
+      "Primary Email":   "private",
+      "Secondary Email": "private"
+    }
+    # find email
+    services = fritzbox.phonebook.Services()
+    for field in fields:
+      if not field: continue
+      for n in map_email_types:
+        if field.lower().find(n) != -1:
+          email = fields[field]
+          etype = map_email_types[n]
+          if len(number) != 0:
+            services.addEmail(etype, email)
+        break
 
     if telephony.hasNumbers():
       contact = fritzbox.phonebook.Contact(0, person, telephony)
