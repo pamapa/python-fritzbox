@@ -44,7 +44,8 @@ class Import(object):
       "home":   "home",
       "home\\": "home",
       "cell":   "mobile",
-      "fax":    "fax"
+      "fax":    "fax",
+      "voice":  "home"
     }
     # email: CardDav to Fritz!Box
     map_email_types = {
@@ -89,7 +90,8 @@ class Import(object):
           continue
         itype = child.type_param.lower()
         if not itype in map_number_types:
-          print("Error: Unknown type: '%s'" % itype)
+          if not itype in ["pref"]:
+            print("Warning: Unknown type (%s): '%s'" % (realName, itype))
           continue
         ntype = map_number_types[itype]
         number = child.value
@@ -114,7 +116,7 @@ class Import(object):
       imageURL = None
       if picture_path is not None and hasattr(card, "photo"):
         if card.photo.encoding_param.lower() != "b":
-          print("Error: Unknown photo encoding: '%s'" % card.photo.encoding_param.lower())
+          print("Error: Unknown photo encoding (%s): '%s'" % (realName, card.photo.encoding_param.lower()))
           continue
         itype = card.photo.type_param.lower()
         if itype == "jpeg" or itype == "image/jpeg":
@@ -122,7 +124,7 @@ class Import(object):
         elif itype == "png":
           imgtype = "png"
         else:
-          print("Error: Not supported photo type: '%s'" % itype)
+          print("Error: Not supported photo type (%s): '%s'" % (realName, itype))
           continue
 
         if not os.path.exists(picture_path):
@@ -152,6 +154,9 @@ class Import(object):
         elif img.size > max_size:
           print("Warning: Photo too big (%s %s): resize to %s" % (realName, img.size, max_size))
           img = img.resize(max_size, Image.BICUBIC)
+
+        # remove alpha channel if there
+        img = img.convert("RGB")
 
         # save          
         img.save(os.path.join(picture_path, fname))
