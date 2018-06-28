@@ -50,7 +50,7 @@ if __name__ == "__main__":
   # file import
   fileImport = parser.add_argument_group("phonebook load")
   fileImport.add_argument("--load",
-    help="load phonebook from filename")
+    help="load phonebook from file by name")
   fileImport.add_argument("--country-code", dest="country_code", default="+41",
     help="country code, e.g. +41")
   fileImport.add_argument("--vip-groups", dest="vip_groups", nargs="+", default=["Family"],
@@ -58,7 +58,7 @@ if __name__ == "__main__":
 
   # download from WebDAV server (e.g. Nextcloud)
   downloadWebDAV = parser.add_argument_group("download WebDAV")
-  downloadWebDAV.add_argument("--webdav-url", dest="webdav_url",
+  downloadWebDAV.add_argument("--webdav-url", dest="webdav_url", nargs="+",
     help="webdav URL, e.g. https://<HOST>/remote.php/dav/addressbooks/users/<LOGIN>/<BOOK>/")
   downloadWebDAV.add_argument("--webdav-username", dest="webdav_username",
     help="webdav username")
@@ -89,7 +89,7 @@ if __name__ == "__main__":
     if args.save: picture_path = os.path.dirname(args.save)
     else: picture_path = "."
     picture_path = os.path.join(picture_path, "fonpix")
-    #print("save pictures to %s" % picture_path)
+    print("save pictures to %s" % picture_path)
 
   try:
     books = None
@@ -106,13 +106,16 @@ if __name__ == "__main__":
         vcf = fritzbox.VCF.Import()
         books = vcf.get_books(args.load, args.vip_groups, picture_path, debug=args.debug)
       else:
-        print("Error: File format not supported '%s'. Supported are *.ldif, *.csv and *.vcf files." % ext)
+        print("error: file format not supported '%s'. Supported are *.ldif, *.csv and *.vcf files." % ext)
         sys.exit(-1)
     elif args.webdav_url:
-      print("download phonebook from %s" % args.webdav_url)
       dav = fritzbox.CardDAV.Import()
-      books = dav.get_books(args.webdav_url, args.webdav_username, args.webdav_password,
-                            args.vip_groups, picture_path, debug=args.debug)
+      books = fritzbox.phonebook.Phonebooks()
+      for url in args.webdav_url:
+        print("download phonebook from %s" % url)
+        tmp = dav.get_books(url, args.webdav_username, args.webdav_password,
+                           args.vip_groups, picture_path, debug=args.debug)
+        for book in tmp.phonebookList: books.addPhonebook(book)
 
     # post process
     if books:
@@ -134,9 +137,9 @@ if __name__ == "__main__":
       print("test access to %s" % args.hostname)
       session = fritzbox.access.Session(args.password, url=args.hostname, cert_verify=args.cert_verify, debug=args.debug)
       session.get_sid()
-      print("Login worked")
+      print("login worked")
   except Exception as ex:
-    print("Error: %s" % ex)
+    print("error: %s" % ex)
     if args.debug:    
       import traceback
       print(traceback.format_exc())
