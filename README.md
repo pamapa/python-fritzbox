@@ -34,7 +34,7 @@ sudo apt-get install python3 python3-bs4 python3-ldif3 python3-vobject python3-s
 git clone https://github.com/pamapa/python-fritzbox.git
 cd python-fritzbox
 
-# This will install the files in /usr/local/lib/python2.7/dist-packages/
+# This will install the files in /usr/local/lib/python3.5/dist-packages/
 # and add links in /usr/local/bin
 sudo python setup.py install
 
