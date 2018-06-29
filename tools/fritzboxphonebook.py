@@ -49,8 +49,8 @@ if __name__ == "__main__":
 
   # file import
   fileImport = parser.add_argument_group("phonebook load")
-  fileImport.add_argument("--load",
-    help="load phonebook from file by name")
+  fileImport.add_argument("--load", nargs="+",
+    help="load phonebooks from file by name")
   fileImport.add_argument("--country-code", dest="country_code", default="+41",
     help="country code, e.g. +41")
   fileImport.add_argument("--vip-groups", dest="vip_groups", nargs="+", default=["Family"],
@@ -94,20 +94,25 @@ if __name__ == "__main__":
   try:
     books = None
     if args.load:
-      print("load phonebook from %s" % args.load)
-      ext = os.path.splitext(args.load)[1].lower()
-      if ext == ".csv":
-        csv = fritzbox.CSV.Import()
-        books = csv.get_books(args.load, args.vip_groups, debug=args.debug)
-      elif ext == ".ldif":
-        ldif = fritzbox.LDIF.Import()
-        books = ldif.get_books(args.load, args.vip_groups, debug=args.debug)
-      elif ext == ".vcf":
-        vcf = fritzbox.VCF.Import()
-        books = vcf.get_books(args.load, args.vip_groups, picture_path, debug=args.debug)
-      else:
-        print("error: file format not supported '%s'. Supported are *.ldif, *.csv and *.vcf files." % ext)
-        sys.exit(-1)
+      books = fritzbox.phonebook.Phonebooks()
+      for f in args.load:
+        print("load phonebook from %s" % args.load)
+        ext = os.path.splitext(args.load)[1].lower()
+        if ext == ".csv":
+          csv = fritzbox.CSV.Import()
+          tmp = csv.get_books(args.load, args.vip_groups, debug=args.debug)
+          books.addPhonebooks(tmp)
+        elif ext == ".ldif":
+          ldif = fritzbox.LDIF.Import()
+          tmp = ldif.get_books(args.load, args.vip_groups, debug=args.debug)
+          books.addPhonebooks(tmp)
+        elif ext == ".vcf":
+          vcf = fritzbox.VCF.Import()
+          tmp = vcf.get_books(args.load, args.vip_groups, picture_path, debug=args.debug)
+          books.addPhonebooks(tmp)
+        else:
+          print("error: file format not supported '%s'. Supported are *.ldif, *.csv and *.vcf files." % ext)
+          sys.exit(-1)
     elif args.webdav_url:
       dav = fritzbox.CardDAV.Import()
       books = fritzbox.phonebook.Phonebooks()
@@ -115,12 +120,13 @@ if __name__ == "__main__":
         print("download phonebook from %s" % url)
         tmp = dav.get_books(url, args.webdav_username, args.webdav_password,
                            args.vip_groups, picture_path, debug=args.debug)
-        for book in tmp.phonebookList: books.addPhonebook(book)
+        books.addPhonebooks(tmp)
 
     # post process
     if books:
       books.normalizeNumbers(args.country_code)
       books.calculateMainNumber()
+      books.mergeToOnePhonebook()
 
     if args.save:
       print("save phonebook to %s" % args.save)

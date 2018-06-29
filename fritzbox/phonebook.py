@@ -175,6 +175,10 @@ class Phonebooks(object):
   def addPhonebook(self, phonebook):
     self.phonebookList.append(phonebook)
 
+  # phonebooks: class Phonebooks
+  def addPhonebooks(self, phonebooks):
+    self.phonebookList += phonebooks.phonebookList
+
   def normalizeNumbers(self, countryCode):
     for book in self.phonebookList:
       book.normalizeNumbers(countryCode)
@@ -182,6 +186,17 @@ class Phonebooks(object):
   def calculateMainNumber(self):
     for book in self.phonebookList:
       book.calculateMainNumber()
+
+  def mergeToOnePhonebook(self):
+    merged = None
+    for book in self.phonebookList:
+      if merged is None:
+        merged = book
+        continue
+      for contact in book.contactList:
+        merged.addContact(contact)
+    if merged is not None:
+      self.phonebookList = [merged]
 
   def write(self, filename):
     xml = ET.Element("phonebooks")
