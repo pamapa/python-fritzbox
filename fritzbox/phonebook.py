@@ -116,6 +116,16 @@ class Contact(object):
   # telephony: class Telephony
   # mod_datetime: datetime.datetime.now()
   def __init__(self, category, person, telephony, services=None, setup=None, mod_datetime=None):
+    if not isinstance(category, int) or not category in [0, 1]:
+      raise PhonebookException("invalid category type: '%s'" % type(category))
+    if not isinstance(person, Person):
+      raise PhonebookException("invalid person type: '%s'" % type(person))
+    if not isinstance(telephony, Telephony):
+      raise PhonebookException("invalid telephony type: '%s'" % type(telephony))
+    if services and not isinstance(services, Services):
+      raise PhonebookException("invalid services type: '%s'" % type(services))
+    if mod_datetime and not isinstance(mod_datetime, datetime):
+      raise PhonebookException("invalid mod_datetime type: '%s'" % type(mod_datetime))
     self.category = category
     self.person = person
     self.telephony = telephony

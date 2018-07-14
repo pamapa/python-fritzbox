@@ -230,7 +230,7 @@ if __name__ == "__main__":
     person = fritzbox.phonebook.Person(r["name"])
     telephony = fritzbox.phonebook.Telephony()
     telephony.addNumber("work", r["number"])
-    contact = fritzbox.phonebook.Contact(0, person, telephony, mod_datetime)
+    contact = fritzbox.phonebook.Contact(0, person, telephony, mod_datetime=mod_datetime)
     phoneBook.addContact(contact)
 
   books = fritzbox.phonebook.Phonebooks()
