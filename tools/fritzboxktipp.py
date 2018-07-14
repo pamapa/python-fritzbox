@@ -89,8 +89,12 @@ def extract_name(data):
 
 def fetch_page(page_nr):
   if g_debug: print("fetch_page: " + str(page_nr))
-  page = urllib.request.urlopen("https://www.ktipp.ch/service/warnlisten/detail/?warnliste_id=7&ajax=ajax-search-form&page=" + str(page_nr), timeout=10)
-  ret = page.read()
+  url = "https://www.ktipp.ch/service/warnlisten/detail/?warnliste_id=7&ajax=ajax-search-form&page=" + str(page_nr)
+  headers = {"User-Agent": "Mozilla/5.0"}
+  req = urllib.request.Request(url, headers=headers)
+  data = urllib.request.urlopen(req, timeout=30)
+  ret = data.read()
+  ret = ret.decode("utf-8")
   return str(ret)
 
 def extract_str(data, start_str, end_str, error_msg):
