@@ -54,7 +54,7 @@ class Import(object):
 
     book = fritzbox.phonebook.Phonebook()
     for card in cards: # card: vobject.base.Component
-      #print card
+      #print (card)
 
       # name
       if hasattr(card, "n"):
@@ -88,12 +88,18 @@ class Import(object):
       for child in card.getChildren():
         if child.name.lower() != "tel":
           continue
-        itype = child.type_param.lower()
-        if not itype in map_number_types:
+        try:
+          itype = child.type_param.lower()
+        except:
+          print("Telno missing type '%s', %s , used 'work' instead" % (realName,child.value ))
+          itype = 'work'
+        try: 
+          ntype = map_number_types[itype]
+        except KeyError:
           if not itype in ["pref"]:
-            print("Warning: Unknown type (%s): '%s'" % (realName, itype))
-          continue
-        ntype = map_number_types[itype]
+            print("Telno Unknown type (%s): '%s', used 'work' instead " % (realName, itype))
+          ntype = 'work'
+
         number = child.value
         if len(number) != 0:
           telephony.addNumber(ntype, number, 0)
@@ -103,11 +109,16 @@ class Import(object):
       for child in card.getChildren():
         if child.name.lower() != "email":
           continue
-        itype = child.type_param.lower()
-        if not itype in map_email_types:
-          #print("Error: Unknown type: '%s'" % itype)
-          continue
-        etype = map_email_types[itype]
+        try:
+          itype = child.type_param.lower()
+        except:
+          print("Email missing type '%s', %s , used 'private' instead" % (realName,child.value ))
+          itype = 'private'
+        try:
+          etype = map_email_types[itype]
+        except KeyError:
+          print("Email Unknown type (%s): '%s', used 'private' instead " % (realName, itype))
+          etype = 'private'
         email = child.value
         if len(email) != 0:
           services.addEmail(etype, email)
