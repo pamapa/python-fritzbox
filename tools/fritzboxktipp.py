@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # python-fritzbox - Automate the Fritz!Box with python
-# Copyright (C) 2015-2017 Patrick Ammann <pammann@gmx.net>
+# Copyright (C) 2015-2021 Patrick Ammann <pammann@gmx.net>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -227,7 +227,7 @@ if __name__ == "__main__":
   mod_datetime = datetime.now()
   phoneBook = fritzbox.phonebook.Phonebook(name="ktipp")
   for r in result:
-    person = fritzbox.phonebook.Person(r["name"])
+    person = fritzbox.phonebook.Person(r["name"], "")
     telephony = fritzbox.phonebook.Telephony()
     telephony.addNumber("work", r["number"])
     contact = fritzbox.phonebook.Contact(0, person, telephony, mod_datetime=mod_datetime)

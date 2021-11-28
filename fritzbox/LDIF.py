@@ -1,5 +1,5 @@
 # python-fritzbox - Automate the Fritz!Box with python
-# Copyright (C) 2015-2017 Patrick Ammann <pammann@gmx.net>
+# Copyright (C) 2015-2021 Patrick Ammann <pammann@gmx.net>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -16,61 +16,45 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #
 
-import sys, argparse, re
-from datetime import datetime
-from ldif3 import LDIFParser
+from ldif import LDIFParser
 
 # fritzbox
 import fritzbox.phonebook
 
 
-class ParseGroups():
-  def __init__(self, vipGroupNames, debug=False):
-    self._vipGroupNames = vipGroupNames
+class ParseGroups(LDIFParser):
+  def __init__(self, infile, vipGroupArray, debug=False):
+    LDIFParser.__init__(self, infile)
+    self.vipGroupDict = {}
+    for g in vipGroupArray:
+      self.vipGroupDict[g] = []
     self._debug = debug
-
-  def get_entries(self, filename):
-    parser = LDIFParser(open(filename, 'rb'))
-
-    self._vipGroups = {}
-    for g in self._vipGroupNames:
-      self._vipGroups[g] = []
-
-    for dn, entry in parser.parse():
-      self._handle(dn, entry)
-
-    return self._vipGroups
-
-  def get_value(self, entry, name):
-    return entry[name][0] if name in entry else None
 
   def _handle(self, dn, entry):
     #debug(entry)
-    cn = self.get_value(entry, "cn")
+    cn = self._get_value(entry, "cn")
     oc = entry["objectclass"]
     if cn and len(oc) == 2 and oc[0] == "top" and oc[1] == "groupOfNames":
       #debug(cn)      
-      if cn in self._vipGroups:
+      if cn in self.vipGroupDict:
         for m in entry["member"]:
           #debug(m)
-          self._vipGroups[cn].append(m)
+          self.vipGroupDict[cn].append(m)
+
+  def _get_value(self, entry, name):
+    return entry[name][0] if name in entry else None
 
 
-class ParsePersons():
-  def __init__(self, vipGroups, debug=False):
-    self.vipGroups = vipGroups
-    self.debug = debug
+class ParsePersons(LDIFParser):
+  def __init__(self, infile, vipGroupDict, debug=False):
+      LDIFParser.__init__(self, infile)
+      self.phoneBook = fritzbox.phonebook.Phonebook()
+      self._vipGroupDict = vipGroupDict
+      self._debug = debug
 
-  def get_entries(self, filename):
-    parser = LDIFParser(open(filename, 'rb'))
-
-    self._phoneBook = fritzbox.phonebook.Phonebook()
-    for dn, entry in parser.parse():
-      self._handle(dn, entry)
-    return self._phoneBook
-
-  def _handle(self, dn, entry):
-    #debug(entry)
+  def handle(self, dn, entry):
+    if self._debug:
+      print("entry: %s" % entry)
     cn = self._get_value(entry, "cn")
 
     category = self._get_category(entry, cn)
@@ -80,30 +64,32 @@ class ParsePersons():
     if telephony.hasNumbers():
       person = self._get_person(entry, cn)
       contact = fritzbox.phonebook.Contact(category, person, telephony, services)
-      self._phoneBook.addContact(contact)
+      self.phoneBook.addContact(contact)
 
   def _get_value(self, entry, name):
-    return entry[name][0] if name in entry else None
+    return entry[name][0].decode() if name in entry else None
 
   def _get_category(self, entry, cn):
       key = "cn=%s,mail=%s" % (cn, self._get_value(entry, "mail"))
       vip = 0
-      for name in self.vipGroups:
-        if key in self.vipGroups[name]:
+      for name in self._vipGroupDict:
+        if key in self._vipGroupDict[name]:
           vip = 1
       return vip
 
   def _get_person(self, entry, cn):
       fname = self._get_value(entry, "givenName")
       sname = self._get_value(entry, "sn")
-      realName = ""      
+
+      givenName = ""
+      familyName = ""
       if not sname or len(sname) == 0:
-        realName = cn
+        familyName = cn
       else:
-        realName = sname
-        if fname and len(fname) != 0:
-          realName += ", %s" % fname
-      return fritzbox.phonebook.Person(realName)
+        givenName = fname
+        familyName = sname
+
+      return fritzbox.phonebook.Person(givenName, familyName)
 
   def _get_telephony(self, entry):
     telephony = fritzbox.phonebook.Telephony()
@@ -134,16 +120,17 @@ class ParsePersons():
 
 
 class Import(object):
-  def get_books(self, filename, vipGroups, debug=False):
+  def get_books(self, filename, vipGroupArray, debug=False):
     # parse groups
-    groups = ParseGroups(vipGroups, debug=debug)
-    vipGroups = groups.get_entries(filename)
+    parser = ParseGroups(open(filename, "rb"), vipGroupArray, debug=debug)
+    parser.parse()
+    vipGroupDict = parser.vipGroupDict
 
     # parse persons
-    persons = ParsePersons(vipGroups, debug=debug)
-    phoneBook = persons.get_entries(filename)
+    parser = ParsePersons(open(filename, "rb"), vipGroupDict, debug)
+    parser.parse()
+    phoneBook = parser.phoneBook
     
     books = fritzbox.phonebook.Phonebooks()
     books.addPhonebook(phoneBook)
     return books
-

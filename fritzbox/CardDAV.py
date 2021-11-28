@@ -1,5 +1,5 @@
 # python-fritzbox - Automate the Fritz!Box with python
-# Copyright (C) 2015-2017 Patrick Ammann <pammann@gmx.net>
+# Copyright (C) 2015-2021 Patrick Ammann <pammann@gmx.net>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -16,7 +16,8 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #
 
-import requests, urllib.parse
+import requests
+import urllib.parse
 import xml.etree.ElementTree as ET
 import vobject
 

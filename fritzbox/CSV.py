@@ -1,5 +1,5 @@
 # python-fritzbox - Automate the Fritz!Box with python
-# Copyright (C) 2015-2017 Patrick Ammann <pammann@gmx.net>
+# Copyright (C) 2015-2021 Patrick Ammann <pammann@gmx.net>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -16,9 +16,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #
 
-import os, sys, argparse
-import codecs, csv
-from datetime import datetime
+import csv
 
 # fritzbox
 import fritzbox.phonebook
@@ -82,7 +80,6 @@ def find_encoding(filname, delimiter, debug=False):
         encoding_index = encoding_index
     except UnicodeDecodeError:
       csv_reader = None
-      input_csv_file.close()
       encoding_index = encoding_index + 1
 
   if debug: print("Correct encoding is %s" % next_encoding)
@@ -93,48 +90,45 @@ def find_encoding(filname, delimiter, debug=False):
 def getEntityPerson(fields):
   # tellows
   if "Score" in fields and "Anruftyp" in fields:
-    realName = "%s / score:%s" % (fields["Anruftyp"], fields["Score"])
-    return fritzbox.phonebook.Person(realName)
+    name = "%s / score:%s" % (fields["Anruftyp"], fields["Score"])
+    return fritzbox.phonebook.Person(name, "")
 
-  first_name = ""
+  givenName = ""
   for field_name in fields:
-    if field_name and field_name.lower().find("first name") != -1:
-      first_name = fields[field_name]
+    if not field_name:
+      continue
+    name = field_name.lower()
+    if "given name" in name or "first name" in name:
+      givenName = fields[field_name]
       break
-  last_name = ""
+  familyName = ""
   for field_name in fields:
-    if field_name and field_name.lower().find("last name") != -1:
-      last_name = fields[field_name]
+    if not field_name:
+      continue
+    name = field_name.lower()
+    if "family name" in name or  "last name" in name:
+      familyName = fields[field_name]
       break
 
-  if len(last_name) == 0:
-    realName = first_name
-  else:
-    realName = last_name
-    if len(first_name) != 0:
-      realName += ", %s" % first_name
-  return fritzbox.phonebook.Person(realName)
+  return fritzbox.phonebook.Person(givenName, familyName)
 
 
 def parse_csv(filename, delimiter, encoding, debug=False):
   csv_file = open(filename, "rt")
   csv_reader = FindEncodingDictReader(csv_file, delimiter=delimiter, encoding=encoding)
 
-  date = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S +0000")
-  #if debug: print(date)
-
   phoneBook = fritzbox.phonebook.Phonebook()
   for (line, fields) in enumerate(csv_reader):
     #if debug: print(fields)
     person = getEntityPerson(fields)
-    #if debug: print(name)
+    #if debug: print(person)
 
     # phone number: CardDav to Fritz!Box
     map_number_names = {
-      "work phone":"work",
-      "home phone":"home",
-      "mobile":"mobile",
-      "fax":"fax"
+      "work phone": "work",
+      "home phone": "home",
+      "mobile": "mobile",
+      "fax": "fax"
     }
     # find numbers and categorize to "home|mobile|work|fax"
     telephony = fritzbox.phonebook.Telephony()

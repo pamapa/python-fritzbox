@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # python-fritzbox - Automate the Fritz!Box with python
-# Copyright (C) 2015-2017 Patrick Ammann <pammann@gmx.net>
+# Copyright (C) 2015-2021 Patrick Ammann <pammann@gmx.net>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -18,7 +18,9 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #
 
-import os, sys, argparse
+import os
+import sys
+import argparse
 
 # fritzbox modules
 import fritzbox.phonebook
@@ -38,14 +40,15 @@ if __name__ == "__main__":
 
   # action
   main = parser.add_mutually_exclusive_group(required=True)
-  main.add_argument("--upload", action="store_true", default=False,
-    help="upload phonebook specified with LOAD to Fritz!Box")
   main.add_argument("--save",
     help="save phonebook specified with LOAD to local file")
-  main.add_argument("--save-cert", dest="save_cert", action="store_true", default=False,
-    help="save certificate")
-  main.add_argument("--test-access", dest="test_access", action="store_true", default=False,
-    help="test access to Fritz!Box")
+  if False:
+    main.add_argument("--upload", action="store_true", default=False,
+      help="upload phonebook specified with LOAD to Fritz!Box")
+    main.add_argument("--save-cert", dest="save_cert", action="store_true", default=False,
+      help="save certificate")
+    main.add_argument("--test-access", dest="test_access", action="store_true", default=False,
+      help="test access to Fritz!Box")
 
   # file import
   fileImport = parser.add_argument_group("phonebook load")
@@ -72,15 +75,16 @@ if __name__ == "__main__":
          "The pictures must be uploaded manually to the Fritz!Box NAS (https://fritz.nas path=/fritz.nas/FRITZ/fonpix")
 
   # upload
-  upload = parser.add_argument_group("upload")
-  upload.add_argument("--hostname", default="https://fritz.box",
-    help="hostname")
-  upload.add_argument("--password",
-    help="password")
-  upload.add_argument("--phonebook-id", dest="phonebook_id", default=0,
-    help="phonebook id: 0 for main phone book, 1 for next phone book in list, etc...")
-  upload.add_argument("--no-cert-verify", dest="cert_verify", action="store_false", default=True,
-    help="do not use certificate to verify secure connection. Default is with certificate")
+  if False:
+    upload = parser.add_argument_group("upload")
+    upload.add_argument("--hostname", default="https://fritz.box",
+      help="hostname")
+    upload.add_argument("--password",
+      help="password")
+    upload.add_argument("--phonebook-id", dest="phonebook_id", default=0,
+      help="phonebook id: 0 for main phone book, 1 for next phone book in list, etc...")
+    upload.add_argument("--cert-verify", dest="cert_verify", action="store_true", default=False,
+      help="do not use certificate to verify secure connection. Default is without certificate")
 
   args = parser.parse_args()
 
@@ -96,19 +100,19 @@ if __name__ == "__main__":
     if args.load:
       books = fritzbox.phonebook.Phonebooks()
       for f in args.load:
-        print("load phonebook from %s" % args.load)
-        ext = os.path.splitext(args.load)[1].lower()
+        print("load phonebook from %s" % f)
+        ext = os.path.splitext(f)[1].lower()
         if ext == ".csv":
           csv = fritzbox.CSV.Import()
-          tmp = csv.get_books(args.load, args.vip_groups, debug=args.debug)
+          tmp = csv.get_books(f, args.vip_groups, debug=args.debug)
           books.addPhonebooks(tmp)
         elif ext == ".ldif":
           ldif = fritzbox.LDIF.Import()
-          tmp = ldif.get_books(args.load, args.vip_groups, debug=args.debug)
+          tmp = ldif.get_books(f, args.vip_groups, debug=args.debug)
           books.addPhonebooks(tmp)
         elif ext == ".vcf":
           vcf = fritzbox.VCF.Import()
-          tmp = vcf.get_books(args.load, args.vip_groups, picture_path, debug=args.debug)
+          tmp = vcf.get_books(f, args.vip_groups, picture_path, debug=args.debug)
           books.addPhonebooks(tmp)
         else:
           print("error: file format not supported '%s'. Supported are *.ldif, *.csv and *.vcf files." % ext)
