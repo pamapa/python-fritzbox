@@ -1,5 +1,5 @@
 # python-fritzbox - Automate the Fritz!Box with python
-# Copyright (C) 2015-2021 Patrick Ammann <pammann@gmx.net>
+# Copyright (C) 2015-2022 Patrick Ammann <pammann@gmx.net>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -16,18 +16,21 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #
 
-import codecs, re
+import re
 from datetime import datetime
-import tempfile, urllib
+import tempfile
 import xml.etree.ElementTree as ET
 from xml.dom.minidom import parseString
 
 # fritzbox
 import fritzbox.multipart
 
-
 class PhonebookException(Exception):
   pass
+
+
+class OptionsXML(object):
+  familyNameFirst = False
 
 
 class Person(object):
@@ -41,10 +44,14 @@ class Person(object):
     self.familyName = familyName.strip()
     self.imageURL = imageURL
 
-  def getXML(self):
+  def getXML(self, options):
     xml = ET.Element("person")
-    # <given name> <family name>
-    realName = "%s %s" % (self.givenName, self.familyName)
+
+    if options.familyNameFirst:
+      realName = "%s %s" % (self.familyName, self.givenName)
+    else:
+      realName = "%s %s" % (self.givenName, self.familyName)
+
     ET.SubElement(xml, "realName").text = realName.strip()
     if self.imageURL: ET.SubElement(xml, "imageURL").text = self.imageURL
     return xml
@@ -144,10 +151,10 @@ class Contact(object):
   def calculateMainNumber(self):
     self.telephony.calculateMainNumber()
 
-  def getXML(self):
+  def getXML(self, options):
     xml = ET.Element("contact")
     ET.SubElement(xml, "category").text = str(self.category)
-    xml.append(self.person.getXML())
+    xml.append(self.person.getXML(options))
     xml.append(self.telephony.getXML())
     if self.services:
       xml.append(self.services.getXML())
@@ -175,11 +182,11 @@ class Phonebook(object):
     for contact in self.contactList:
       contact.calculateMainNumber()
 
-  def getXML(self):
+  def getXML(self, options):
     xml = ET.Element("phonebook")
     if self.name: xml.set("name", self.name)
     for contact in self.contactList:
-      xml.append(contact.getXML())
+      xml.append(contact.getXML(options))
     return xml
 
 
@@ -214,19 +221,16 @@ class Phonebooks(object):
     if merged is not None:
       self.phonebookList = [merged]
 
-  def write(self, filename):
+  def write(self, filename, optionsXML= {}):
     xml = ET.Element("phonebooks")
     for book in self.phonebookList:
-      xml.append(book.getXML())
+      xml.append(book.getXML(optionsXML))
     tree = ET.ElementTree(xml)
-    if False:    
-      tree.write(filename, encoding="iso-8859-1", xml_declaration=True)
-    else:
-      rough_string = ET.tostring(tree.getroot(), encoding="iso-8859-1", method="xml")
-      reparsed = parseString(rough_string)
-      pretty = reparsed.toprettyxml(indent="  ", encoding="iso-8859-1").decode("iso-8859-1")
-      with open(filename, 'w', encoding="iso-8859-1") as outfile:
-        outfile.write(pretty)
+    rough_string = ET.tostring(tree.getroot(), encoding="iso-8859-1", method="xml")
+    reparsed = parseString(rough_string)
+    pretty = reparsed.toprettyxml(indent="  ", encoding="iso-8859-1").decode("iso-8859-1")
+    with open(filename, 'w', encoding="iso-8859-1") as outfile:
+      outfile.write(pretty)
 
   # sid: Login session ID
   # phonebookid: 0 for main phone book
@@ -238,7 +242,7 @@ class Phonebooks(object):
 
     # upload
     sid = session.get_sid()
-    form = multipart.MultiPartForm()
+    form = fritzbox.multipart.MultiPartForm()
     form.add_field("sid", sid)
     form.add_field("PhonebookId", phonebookid)
     with open(tmpfile.name, "r") as fh:

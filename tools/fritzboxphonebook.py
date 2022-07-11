@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # python-fritzbox - Automate the Fritz!Box with python
-# Copyright (C) 2015-2021 Patrick Ammann <pammann@gmx.net>
+# Copyright (C) 2015-2022 Patrick Ammann <pammann@gmx.net>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -73,6 +73,8 @@ if __name__ == "__main__":
   misc.add_argument("--save-pictures", dest="save_pictures", action="store_true", default=False,
     help="Save pictures within VCF to local fonpix folder. "
          "The pictures must be uploaded manually to the Fritz!Box NAS (https://fritz.nas path=/fritz.nas/FRITZ/fonpix")
+  misc.add_argument("--familyname-first", dest="familyname_first", action="store_true", default=False,
+    help="In saved phonebook the real name is '<family name> <given name>'. Default: '<given name> <family name>'.")
 
   # upload
   if False:
@@ -134,24 +136,26 @@ if __name__ == "__main__":
 
     if args.save:
       print("save phonebook to %s" % args.save)
-      books.write(args.save)
-    elif args.save_cert:
-      print("save certificate")
-      session = fritzbox.access.Session(args.password, url=args.hostname, cert_verify=args.cert_verify, debug=args.debug)
-      session.save_certificate()
-    elif args.upload:
-      print("upload phonebook to %s" % args.hostname)
-      session = fritzbox.access.Session(args.password, url=args.hostname, cert_verify=args.cert_verify, debug=args.debug)
-      books.upload(session, args.phonebook_id)
-    elif args.test_access:
-      print("test access to %s" % args.hostname)
-      session = fritzbox.access.Session(args.password, url=args.hostname, cert_verify=args.cert_verify, debug=args.debug)
-      session.get_sid()
-      print("login worked")
+      optionsXML = fritzbox.phonebook.OptionsXML()
+      optionsXML.familyNameFirst = args.familyname_first
+      books.write(args.save, optionsXML)
+    if False:
+      if args.save_cert:
+        print("save certificate")
+        session = fritzbox.access.Session(args.password, url=args.hostname, cert_verify=args.cert_verify, debug=args.debug)
+        session.save_certificate()
+      elif args.upload:
+        print("upload phonebook to %s" % args.hostname)
+        session = fritzbox.access.Session(args.password, url=args.hostname, cert_verify=args.cert_verify, debug=args.debug)
+        books.upload(session, args.phonebook_id)
+      elif args.test_access:
+        print("test access to %s" % args.hostname)
+        session = fritzbox.access.Session(args.password, url=args.hostname, cert_verify=args.cert_verify, debug=args.debug)
+        session.get_sid()
+        print("login worked")
   except Exception as ex:
     print("error: %s" % ex)
     if args.debug:    
       import traceback
       print(traceback.format_exc())
     sys.exit(-2)
-
