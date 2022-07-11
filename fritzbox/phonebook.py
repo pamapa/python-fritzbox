@@ -221,7 +221,7 @@ class Phonebooks(object):
     if merged is not None:
       self.phonebookList = [merged]
 
-  def write(self, filename, optionsXML= {}):
+  def write(self, filename, optionsXML=OptionsXML()):
     xml = ET.Element("phonebooks")
     for book in self.phonebookList:
       xml.append(book.getXML(optionsXML))
