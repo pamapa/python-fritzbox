@@ -2,7 +2,7 @@ import os
 from setuptools import setup
 
 setup(name='python-fritzbox',
-  version='0.2',
+  version='0.3',
   description='Automate the Fritz!Box with python',
   url='https://github.com/pamapa/python-fritzbox',
   author='Patrick Ammann',
