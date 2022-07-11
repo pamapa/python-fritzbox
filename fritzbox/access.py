@@ -1,5 +1,5 @@
 # python-fritzbox - Automate the Fritz!Box with python
-# Copyright (C) 2015-2017 Patrick Ammann <pammann@gmx.net>
+# Copyright (C) 2015-2021 Patrick Ammann <pammann@gmx.net>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -16,9 +16,10 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #
 
-import os, argparse
+import os
 import hashlib
-import urllib.parse, urllib.request
+import urllib.parse
+import urllib.request
 import xml.etree.ElementTree as ET
 import ssl
 
@@ -102,11 +103,11 @@ class Session(object):
   def post(self, path, headers, body):
     uri = "%s/%s" % (self.url.geturl(), path)
     if self.debug: print("post: uri=%s, headers=%s" % (uri, headers))
-    request = urllib2.Request(uri)
+    request = urllib.request.Request(uri)
     for header in headers:
       request.add_header(header, headers[header])
     request.add_data(body)
-    resp = urllib2.urlopen(request, cafile=self.cafile)
+    resp = urllib.request.urlopen(request, cafile=self.cafile)
     if self.debug: print("resp: %s" % resp.info())
     return resp
 
@@ -115,8 +116,7 @@ class Session(object):
     uri = "%s/%s" % (self.url.geturl(), path)
     if self.debug: print("get: uri=%s, query=%s" % (uri, query))
     data = urllib.urlencode(query)
-    request = urllib2.Request(uri, data)
-    resp = urllib2.urlopen(request, cafile=self.cafile)
+    request = urllib.request.Request(uri, data)
+    resp = urllib.request.urlopen(request, cafile=self.cafile)
     if self.debug: print("resp: %s" % resp.info())
     return resp
-

@@ -1,5 +1,5 @@
 # python-fritzbox - Automate the Fritz!Box with python
-# Copyright (C) 2015-2017 Patrick Ammann <pammann@gmx.net>
+# Copyright (C) 2015-2021 Patrick Ammann <pammann@gmx.net>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -31,15 +31,21 @@ class PhonebookException(Exception):
 
 
 class Person(object):
-  # realName: string
+  # givenName: string | None
+  # familyName: string | None
   # imageURL: e.g. file:///var/InternerSpeicher/FRITZ/fonpix/1.jpg
-  def __init__(self, realName, imageURL=None):
-    self.realName = realName
+  def __init__(self, givenName, familyName, imageURL=None):
+    if givenName is None: givenName = ""
+    self.givenName = givenName.strip()
+    if familyName is None: familyName = ""
+    self.familyName = familyName.strip()
     self.imageURL = imageURL
 
   def getXML(self):
     xml = ET.Element("person")
-    ET.SubElement(xml, "realName").text = self.realName
+    # <given name> <family name>
+    realName = "%s %s" % (self.givenName, self.familyName)
+    ET.SubElement(xml, "realName").text = realName.strip()
     if self.imageURL: ET.SubElement(xml, "imageURL").text = self.imageURL
     return xml
 

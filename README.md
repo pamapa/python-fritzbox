@@ -1,5 +1,5 @@
 # python-fritzbox
-Automate the Fritz!Box by using python.
+Automate the Fritz!Box by using Python.
 
 
 ## Features
@@ -27,9 +27,9 @@ Tested with
 - Fritzbox 7390
 
 
-## Install on Debian (jessie)
+## Install on Debian (bookworm)
 ```bash
-sudo apt-get install python3 python3-bs4 python3-ldif3 python3-vobject python3-setuptools python3-pil
+sudo apt-get install python3 python3-ldap python3-vobject python3-bs4 python3-setuptools python3-pil
 
 git clone https://github.com/pamapa/python-fritzbox.git
 cd python-fritzbox
