@@ -99,7 +99,8 @@ class Import(object):
         params_types = child.params.get("TYPE", [])
         itype = self._get_params_type(params_types, map_number_types)
         if itype is None:
-          continue
+          print("Warning: Phone number missing/unsupported TYPE use 'home' instead (%s %s, %s)" % (givenName, familyName, params_types))
+          itype = "home"
 
         ntype = map_number_types[itype]
         number = child.value
@@ -115,7 +116,8 @@ class Import(object):
         params_types = child.params.get("TYPE", [])
         itype = self._get_params_type(params_types, map_email_types)
         if itype is None:
-          continue
+          print("Warning: Email missing/unsupported TYPE use 'home' instead (%s %s, %s)" % (givenName, familyName, params_types))
+          itype = "home"
 
         etype = map_email_types[itype]
         email = child.value
