@@ -17,6 +17,7 @@
 #
 
 import csv
+import logging
 
 # fritzbox
 import fritzbox.phonebook
@@ -50,18 +51,18 @@ class FindEncodingDictReader:
         return self
 
 
-def find_delimiter(filname, debug=False):
+def find_delimiter(filname, logger: logging.Logger):
   with open(filname, 'r') as f:
     line = f.readline()
     semi_cnt = line.count(";")
     comma_cnt = line.count(",")
     delimiter = ","
     if semi_cnt >  comma_cnt: delimiter = ";"
-    if debug: print("Correct delimiter is '%s'" % delimiter)
+    logger.debug("Correct delimiter is '%s'" % delimiter)
     return delimiter
 
 
-def find_encoding(filname, delimiter, debug=False):
+def find_encoding(filname, delimiter, logger: logging.Logger):
   all_encoding = [
     "utf-8", "iso-8859-1", "iso-8859-2", "iso-8859-15",
     "iso-8859-3", "us-ascii", "windows-1250", "windows-1252",
@@ -71,7 +72,7 @@ def find_encoding(filname, delimiter, debug=False):
   csv_reader = None
   while csv_reader == None:  
     next_encoding = all_encoding[encoding_index]
-    if debug: print("Trying %s" % (next_encoding))
+    logger.debug("Trying %s" % (next_encoding))
     csv_file = open(filname, "rt")
     csv_reader = FindEncodingDictReader(csv_file, delimiter=delimiter, encoding=next_encoding)
     try:
@@ -82,7 +83,7 @@ def find_encoding(filname, delimiter, debug=False):
       csv_reader = None
       encoding_index = encoding_index + 1
 
-  if debug: print("Correct encoding is %s" % next_encoding)
+  logger.debug("Correct encoding is %s" % next_encoding)
   csv_file.close()
   return next_encoding
 
@@ -113,15 +114,15 @@ def getEntityPerson(fields):
   return fritzbox.phonebook.Person(givenName, familyName)
 
 
-def parse_csv(filename, delimiter, encoding, debug=False):
+def parse_csv(filename, delimiter, encoding, logger: logging.Logger):
   csv_file = open(filename, "rt")
   csv_reader = FindEncodingDictReader(csv_file, delimiter=delimiter, encoding=encoding)
 
   phoneBook = fritzbox.phonebook.Phonebook()
   for (line, fields) in enumerate(csv_reader):
-    #if debug: print(fields)
+    #logger.debug(fields)
     person = getEntityPerson(fields)
-    #if debug: print(person)
+    #logger.debug(person)
 
     # phone number: CardDav to Fritz!Box
     map_number_names = {
@@ -175,10 +176,10 @@ def parse_csv(filename, delimiter, encoding, debug=False):
 
 
 class Import(object):
-  def get_books(self, filename, vipGroups, debug=False):
-    delimiter = find_delimiter(filename, debug=debug)
-    encoding = find_encoding(filename, delimiter, debug=debug)
-    book = parse_csv(filename, delimiter, encoding, debug=debug)
+  def get_books(self, filename, vipGroups, logger: logging.Logger=logging.getLogger()):
+    delimiter = find_delimiter(filename, logger)
+    encoding = find_encoding(filename, delimiter, logger)
+    book = parse_csv(filename, delimiter, encoding, logger)
     books = fritzbox.phonebook.Phonebooks()
     books.addPhonebook(book)
     return books

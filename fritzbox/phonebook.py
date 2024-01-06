@@ -94,7 +94,7 @@ class Telephony(object):
           found = True
           break
       if found: break
-          
+
   def getXML(self):
     xml = ET.Element("telephony")
     for ntype in self.numberDict:

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # python-fritzbox - Automate the Fritz!Box with python
-# Copyright (C) 2015-2021 Patrick Ammann <pammann@gmx.net>
+# Copyright (C) 2015-2024 Patrick Ammann <pammann@gmx.net>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -18,10 +18,14 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #
 
-import os, sys, argparse, re
+import sys
+import argparse
+import re
 from bs4 import BeautifulSoup
 import urllib.request
 from datetime import datetime
+import traceback
+import logging
 
 # fritzbox
 sys.path.append("..")
@@ -30,222 +34,196 @@ import fritzbox.access
 
 
 NAME_MAX_LENGTH = 100
-g_debug = False
 
 
-def extract_number(data):
-  n = re.sub(r"[^0-9\+]","", data)
-  return n
+class FritzboxKTippCH(object):
+    def __init__(self) -> None:
+        self.logger = logging.getLogger("fritzboxktipp")
 
-# 021 558 73 91/92/93/94/95
-def extract_slashed_numbers(data):
-  ret = []
-  arr = data.split("/")
-  a0 = extract_number(arr[0])
-  if (a0 != ""):
-    ret.append(a0)
-    base = a0[0:-2]
-    for ax in arr[1:]:
-      ax = extract_number(ax)
-      if (ax != ""):
-        ax = extract_number(base + ax)
-        ret.append(ax)
-  return ret
+    def _extract_number(self, data):
+        n = re.sub(r"[^0-9\+]","", data)
+        return n
 
-# 044 400 00 00 bis 044 400 00 19
-def extract_range_numbers(data):
-  ret = []
-  arr = re.split("bis", data)
-  s = extract_number(arr[0])
-  e = extract_number(arr[1])
-  for i in range(int(s[-4:]), int(e[-4:])+1):
-    a = s[:-4]+"%04d" % i
-    ret.append(a)
-  return ret
+    def _extract_name(self, data):
+        s = data
+        s = s.replace("\n", "").replace("\r", "")
+        s = re.sub(r'<[^>]*>', " ", s) # remove tags
+        s = s.replace("&amp", "&")
+        s = s.replace("  ", " ")
+        s = s.strip()
+        if s.startswith("Firma: "): s = s[7:]
+        #self.logger.debug("_extract_name() data:'%s' -> '%s'" % (data, s))
+        return s if len(s)<= NAME_MAX_LENGTH else s[0:NAME_MAX_LENGTH-3]+"..."
 
-def extract_numbers(data):
-  ret = []
-  #print("data:" + data)
-  arr = re.split("und|oder|sowie|auch|,|;", data)
-  for a in arr:
-    if a.find("/") != -1:
-      ret.extend(extract_slashed_numbers(a))
-    elif a.find("bis") != -1:
-      ret.extend(extract_range_numbers(a))
-    else:
-      a = extract_number(a)
-      if (a != ""): ret.append(a)
-  return ret
+    def _http_get(self, url):
+        self.logger.debug("http_get: '%s'" % url)
+        headers = {"User-Agent": "Mozilla/5.0"}
+        req = urllib.request.Request(url, headers=headers)
+        data = urllib.request.urlopen(req, timeout=60)
+        ret = data.read()
+        ret = ret.decode("utf-8", "ignore")
+        return str(ret)
 
-def extract_name(data):
-  s = data
-  s = s.replace("\n", "").replace("\r", "")
-  s = re.sub(r'<[^>]*>', " ", s) # remove tags
-  s = s.replace("&amp", "&")
-  s = s.replace("  ", " ")
-  s = s.strip()
-  if s.startswith("Firma: "):
-    s = s[7:]
-  return s if len(s)<= NAME_MAX_LENGTH else s[0:NAME_MAX_LENGTH-3]+"..."
+    def _fetch_page(self, page_nr):
+        #self.logger.debug("_fetch_page: " + str(page_nr))
+        url = "https://www.ktipp.ch/service/warnlisten/detail/warnliste/unerwuenschte-oder-laestige-telefonanrufe/"
+        url += "?tx_updkonsuminfo_konsuminfofe[%40widget_0][currentPage]=" + str(page_nr)
+        ret = self._http_get(url)
+        #self.logger.debug("%s\n%s\n%s" % ("-"*80, ret, "-"*80))
+        return ret
 
-def fetch_page(page_nr):
-  if g_debug: print("fetch_page: " + str(page_nr))
-  url = "https://www.ktipp.ch/service/warnlisten/detail/?warnliste_id=7&ajax=ajax-search-form&page=" + str(page_nr)
-  headers = {"User-Agent": "Mozilla/5.0"}
-  req = urllib.request.Request(url, headers=headers)
-  data = urllib.request.urlopen(req, timeout=30)
-  ret = data.read()
-  ret = ret.decode("utf-8")
-  return str(ret)
+    def _parse_page(self, soup):
+        ret = []
+        #self.logger.debug("parse_page...")
+        content = soup.find("div", id="warnlisteContent")
+        number_list = content.findAll("article")
+        now = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S +0000")
+        for e in number_list:
+            number = self._extract_number(e.find("h3").get_text())
+            e.h3.decompose()  # remove h3
+            name = self._extract_name(str(e))
+            self.logger.debug("number:'%s' name:'%s'" % (number, name))
+            ret.append({"number": number, "name": name, "date_created": now, "date_modified": now})
+        #self.logger.debug("parse_page done")
+        return ret
 
-def extract_str(data, start_str, end_str, error_msg):
-  s = data.find(start_str)
-  if (s == -1): error(error_msg+". Start ("+start_str+") not found.")
-  s += len(start_str)
-  e = data.find(end_str, s)
-  if (e == -1): error(error_msg+". End ("+end_str+") not found.")
-  return data[s:e].strip()
+    def _parse_pages(self):
+        ret = []
 
-def parse_page(soup):
-  ret = []
-  #if g_debug: print("parse_page...")
-  list = soup.findAll("section",{"class":"teaser cf"})
+        content = self._fetch_page(1)
+        soup = BeautifulSoup(content, "lxml")
+        ret.extend(self._parse_page(soup))
 
-  date = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S +0000")
+        # already parsed?
+        current_update = ret[0]["number"]  # newest added number
+        self.logger.debug("Current update: '%s'" % current_update)
 
-  for e in list:
-    numbers = extract_numbers(e.strong.contents[0])
-    name = extract_name(str(e.p))
-    for n in numbers:
-      ret.append({"number":n, "name":name})
-  #if g_debug: print("parse_page done")
-  return ret
+        # find last page
+        tmp = soup.find("div", id="warnlisteContent")
+        tmp = tmp.findAll("li")[-2]
+        a = tmp.find("a", href=True)
+        last_page = int(a.string)
+        self.logger.debug("last_page: %d" % last_page)
 
-def parse_pages(content):
-  ret = []
+        # TEST
+        #last_page = 2
 
-  soup = BeautifulSoup(content, "lxml")
-  tmp = str(soup.findAll("li")[-1])
-  max_page_str = extract_str(tmp, "ajaxPagerWarnlisteLoadIndex(", ")", "Can't extract max pages")
-  last_page = int(max_page_str)
-  if g_debug: print("Last page: %s" % last_page)
-  
-  ret.extend(parse_page(soup))
-  #return ret
-  for p in range(1,last_page+1):
-    if not g_debug:
-      sys.stdout.write("Fetch page %s of %s\r" % (p, last_page))
-      sys.stdout.flush()
-    content = fetch_page(p)
-    soup = BeautifulSoup(content, "lxml")
-    ret.extend(parse_page(soup))
-  return ret
+        for p in range(2, last_page + 1):
+            content = self._fetch_page(p)
+            soup = BeautifulSoup(content, "lxml")
+            ret.extend(self._parse_page(soup))
+            #self.logger.debug("entries: %d" % len(ret))
+        return ret
 
-# remove duplicates
-# remove too small numbers -> dangerous
-# make sure numbers are in international format (e.g. +41AAAABBBBBB)
-def cleanup_entries(arr):
-  #if g_debug: print("cleanup_entries...")
-  seen = set()
-  uniq = []
-  for r in arr:
-    x = r["number"]
+    def get_result(self):
+        entries = self._parse_pages()
+        entries = self._cleanup_entries(entries, country_code="+41")
+        return entries
 
-    # make international format
-    if x.startswith("00"):  x = "+"+x[2:]
-    elif x.startswith("0"): x = "+41"+x[1:]
-    r["number"] = x
+    # remove duplicates
+    # remove too small numbers -> dangerous
+    # make sure numbers are in international format (e.g. +41AAAABBBBBB)
+    def _cleanup_entries(self, arr, country_code="+41"):
+        self.logger.debug("cleanup_entries (num=%s)" % len(arr))
+        seen = set()
+        uniq = []
+        for r in arr:
+            x = r["number"]
 
-    # filter
-    if len(x) < 4:
-      # too dangerous
-      if g_debug: print("Skip too small number: " + str(r))
-      continue
-    if not x.startswith("+"):
-      # not in international format
-      if g_debug: print("Skip unknown format number: " + str(r))
-      continue;
-    if len(x) > 16:
-      # see spec E.164 for international numbers: 15 (including country code) + 1 ("+")
-      if g_debug: print("Skip too long number:" + str(r))
-      continue;
+            # make international format
+            if x.startswith("00"):  x = "+" + x[2:]
+            elif x.startswith("0"): x = country_code + x[1:]
+            else: x = country_code + x
+            r["number"] = x
 
-    # filter duplicates
-    if x not in seen:
-      uniq.append(r)
-      seen.add(x)
+            # filter
+            if len(x) < 5:
+                # too dangerous
+                self.logger.debug("Skip too short number: " + str(r))
+                continue
+            if not x.startswith("+"):
+                # not in international format
+                self.logger.debug("Skip unknown format number: " + str(r))
+                continue
+            if len(x) > 16:
+                # see spec E.164 for international numbers: 15 (including country code) + 1 ("+")
+                self.logger.debug("Skip too long number:" + str(r))
+                continue
 
-  #if g_debug: print("cleanup_entries done")
-  return uniq
+            # filter duplicates
+            if x not in seen:
+                uniq.append(r)
+                seen.add(x)
+            else:
+                self.logger.debug("Skip duplicate number:" + str(r))
+        self.logger.debug("cleanup_entries done (num=%s)" % len(uniq))
+        return uniq
 
 
 #
 # main
 #
 if __name__ == "__main__":
-  parser = argparse.ArgumentParser(description="Fetch blacklist provided by ktipp.ch")
-  parser.add_argument('--debug', action='store_true')
+    parser = argparse.ArgumentParser(description="Fetch blacklist provided by ktipp.ch")
+    parser.add_argument('--debug', action='store_true')
+    # action
+    main = parser.add_mutually_exclusive_group(required=True)
+    main.add_argument("--save",
+        help="save phonebook received from Ktipp to filename")
+    if False:
+        main.add_argument("--upload", action="store_true", default=False,
+            help="upload phonebook received from Ktipp to Fritz!Box")
 
-  # action
-  main = parser.add_mutually_exclusive_group(required=True)
-  main.add_argument("--upload", action="store_true", default=False,
-    help="upload phonebook received from Ktipp to Fritz!Box")
-  main.add_argument("--save",
-    help="save phonebook received from Ktipp to filename")
+    if False:
+        # upload
+        upload = parser.add_argument_group("upload")
+        upload.add_argument("--hostname", default="https://fritz.box",
+            help="hostname")
+        upload.add_argument("--password",
+            help="password")
+        upload.add_argument("--phonebook-id", dest="phonebook_id", default=1,
+            help="phonebook id: 0 for main phone book, 1 for next phone book in list, etc...")
+        upload.add_argument("--no-cert-verify", dest="cert_verify", action="store_false", default=True,
+            help="do not use certificate to verify secure connection. Default is with certificate")
+    args = parser.parse_args()
 
-  # upload
-  upload = parser.add_argument_group("upload")
-  upload.add_argument("--hostname", default="https://fritz.box",
-    help="hostname")
-  upload.add_argument("--password",
-    help="password")
-  upload.add_argument("--phonebook-id", dest="phonebook_id", default=1,
-    help="phonebook id: 0 for main phone book, 1 for next phone book in list, etc...")
-  upload.add_argument("--no-cert-verify", dest="cert_verify", action="store_false", default=True,
-    help="do not use certificate to verify secure connection. Default is with certificate")
+    h1 = logging.StreamHandler(sys.stdout)
+    h1.setLevel(logging.DEBUG)
+    h1.addFilter(lambda record: record.levelno <= logging.INFO)
+    h2 = logging.StreamHandler()
+    h2.setLevel(logging.WARNING)
+    logging.basicConfig(level=logging.INFO, handlers=[h1, h2])
+    logging.basicConfig(level=logging.INFO)
+    if args.debug:
+        logging.getLogger().setLevel(logging.DEBUG)
 
-  args = parser.parse_args()
-  g_debug = args.debug
+    ktipp = FritzboxKTippCH()
+    result = ktipp.get_result()
+    if len(result) == 0:
+        print("nothing to proceed")
+        sys.exit(0)
 
-  if not g_debug:
-    sys.stdout.write("Fetch page 0\r")
-    sys.stdout.flush()
-  content = fetch_page(0)
-  source_date = extract_str(content, "Letzte Aktualisierung:", "<", "Can't extract creation date")
-  if g_debug: print("Source date: %s" % source_date)
-#  if last_update == source_date:
-#    # we already have this version
-#    debug("We already have this version")
-#    return
+    mod_datetime = datetime.now()
+    phoneBook = phonebook.Phonebook(name="ktipp")
+    for r in result:
+        person = phonebook.Person(r["name"], "")
+        telephony = phonebook.Telephony()
+        telephony.addNumber("work", r["number"])
+        contact = phonebook.Contact(0, person, telephony, mod_datetime=mod_datetime)
+        phoneBook.addContact(contact)
 
-  result = parse_pages(content)
-  result = cleanup_entries(result)
+    books = phonebook.Phonebooks()
+    books.addPhonebook(phoneBook)
 
-  if len(result) == 0:
-    error("nothing to proceed")
-    sys.exit(0)
-
-  mod_datetime = datetime.now()
-  phoneBook = fritzbox.phonebook.Phonebook(name="ktipp")
-  for r in result:
-    person = fritzbox.phonebook.Person(r["name"], "")
-    telephony = fritzbox.phonebook.Telephony()
-    telephony.addNumber("work", r["number"])
-    contact = fritzbox.phonebook.Contact(0, person, telephony, mod_datetime=mod_datetime)
-    phoneBook.addContact(contact)
-
-  books = fritzbox.phonebook.Phonebooks()
-  books.addPhonebook(phoneBook)
-
-  try:
-    if args.save:
-      print("save phonebook to %s..." % args.save)
-      books.write(args.save)
-    elif args.upload:
-      print("upload phonebook to %s..." % args.hostname)
-      session = fritzbox.access.Session(args.password, args.hostname, cert_verify=args.cert_verify, debug=args.debug)
-      books.upload(session, args.phonebook_id)
-  except Exception as ex:
-    print("Error: %s" % ex)
-    sys.exit(-2)
-
+    try:
+        if args.save:
+            print("save phonebook to %s..." % args.save)
+            books.write(args.save)
+        elif False and args.upload:
+            print("upload phonebook to %s..." % args.hostname)
+            session = fritzbox.access.Session(args.password, args.hostname, cert_verify=args.cert_verify, logger=logger)
+            books.upload(session, args.phonebook_id)
+    except Exception as ex:
+        logging.error(ex)
+        logging.debug(traceback.format_exc())
+        sys.exit(-2)

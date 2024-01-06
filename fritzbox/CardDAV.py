@@ -16,6 +16,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #
 
+import logging
 import requests
 import urllib.parse
 import xml.etree.ElementTree as ET
@@ -34,19 +35,19 @@ class Import(object):
       raise requests.exceptions.HTTPError(msg)
 
 
-  def _get_xml(self, session, url_dav, settings, debug=False):
+  def _get_xml(self, session, url_dav, settings, logger: logging.Logger):
     response = session.request('PROPFIND', url_dav, headers=[], **settings)
     self._raise_for_status_code(response)
-    #if debug: print("Response: %s" % response.content)
+    #logger.debug("Response: %s" % response.content)
     if response.headers['DAV'].count('addressbook') == 0:
         raise Exception("URL is not a CardDAV resource")
     return response.content
 
 
-  def _process_xml(self, xml, debug=False):
+  def _process_xml(self, xml, logger: logging.Logger):
     namespace = "{DAV:}"
     root = ET.XML(xml)
-    #if debug: print("root: %s" % ET.tostring(root, "utf-8"))
+    #logger.debug("root: %s" % ET.tostring(root, "utf-8"))
     hrefs = dict()
     for response in root:
       if response.tag != namespace + "response":
@@ -72,18 +73,18 @@ class Import(object):
     return hrefs
 
 
-  def _get_vcard(self, session, url_vcard, settings, debug=False):
-    if debug: print("_get_vcard(%s)" % url_vcard)
+  def _get_vcard(self, session, url_vcard, settings, logger: logging.Logger):
+    logger.debug("_get_vcard(%s)" % url_vcard)
     response = session.get(url_vcard, headers=[], **settings)
     self._raise_for_status_code(response)
-    #if debug: print("Response: %s" % response.content)
+    #logger.debug("Response: %s" % response.content)
     ret = vobject.readOne(response.content.decode())
     return ret
 
 
   def get_books(self, url, username, password, vipGroups, picture_path,
-                conn_auth="basic", conn_verify=True, debug=False):
-    if debug: print("get_books(%s)" % url)
+                conn_auth="basic", conn_verify=True, logger: logging.Logger=logging.getLogger()):
+    logger.debug("get_books(%s)" % url)
 
     # url base
     url_split = urllib.parse.urlparse(url)
@@ -95,18 +96,17 @@ class Import(object):
       settings["auth"] = (username, password)
     elif conn_auth == "digest":
       from requests.auth import HTTPDigestAuth
-      settings["auth"] = HTTPDigestAuth(user, passwd)
+      settings["auth"] = HTTPDigestAuth(username, password)
 
     session = requests.session()
-    xml = self._get_xml(session, url, settings, debug)
-    hrefs = self._process_xml(xml, debug)
+    xml = self._get_xml(session, url, settings, logger)
+    hrefs = self._process_xml(xml, logger)
 
     # convert into vcard objects
     cards = []
     for href in hrefs.keys():
-      cards.append(self._get_vcard(session, url_base + href, settings, debug))
+      cards.append(self._get_vcard(session, url_base + href, settings, logger))
 
     vcf = fritzbox.VCF.Import()
-    books = vcf.get_books_by_cards(cards, vipGroups, picture_path, debug=debug)
+    books = vcf.get_books_by_cards(cards, vipGroups, picture_path, logger)
     return books
-

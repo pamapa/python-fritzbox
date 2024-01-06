@@ -22,6 +22,7 @@ import os
 import re
 import codecs
 import vobject
+import logging
 
 from PIL import Image
 from PIL import ImageOps
@@ -31,16 +32,16 @@ import fritzbox.phonebook
 
 
 class Import(object):
-  def get_books(self, filename, vipGroups, picture_path, debug=False):
+  def get_books(self, filename, vipGroups, picture_path, logger: logging.Logger=logging.getLogger()):
     cards = []
     with codecs.open(filename, "r", "utf-8") as infile:
       data = infile.read()
       for card in vobject.readComponents(data):
         cards.append(card)
-    return self.get_books_by_cards(cards, vipGroups, picture_path, debug)
+    return self.get_books_by_cards(cards, vipGroups, picture_path, logger)
 
 
-  def get_books_by_cards(self, cards, vipGroups, picture_path, debug=False):
+  def get_books_by_cards(self, cards, vipGroups, picture_path, logger: logging.Logger):
     # phone number: CardDav to Fritz!Box
     map_number_types = {
       "work":   "work",
@@ -63,7 +64,7 @@ class Import(object):
 
     book = fritzbox.phonebook.Phonebook()
     for card in cards: # card: vobject.base.Component
-      #print (card)
+      #logger.debug(card)
 
       # name
       givenName = ""
@@ -79,8 +80,8 @@ class Import(object):
           familyName = tmp_split[1]
         else:
           givenName = tmp
-        print("Warning: N field missing, using FN field instead: '%s'" % givenName)
-      #print("Name: %s %s" % (givenName, familyName))
+        logger.warn("N field missing, using FN field instead: '%s'" % givenName)
+      #logger.debug("Name: %s %s" % (givenName, familyName))
 
       # category
       category = 0
@@ -99,7 +100,7 @@ class Import(object):
         params_types = child.params.get("TYPE", [])
         itype = self._get_params_type(params_types, map_number_types)
         if itype is None:
-          print("Warning: Phone number missing/unsupported TYPE, using 'home' instead (%s %s, %s)" % (givenName, familyName, params_types))
+          logger.warn("Phone number missing/unsupported TYPE, using 'home' instead (%s %s, %s)" % (givenName, familyName, params_types))
           itype = "home"
 
         ntype = map_number_types[itype]
@@ -116,7 +117,7 @@ class Import(object):
         params_types = child.params.get("TYPE", [])
         itype = self._get_params_type(params_types, map_email_types)
         if itype is None:
-          print("Warning: Email missing/unsupported TYPE, using 'home' instead (%s %s, %s)" % (givenName, familyName, params_types))
+          logger.warn("Email missing/unsupported TYPE, using 'home' instead (%s %s, %s)" % (givenName, familyName, params_types))
           itype = "home"
 
         etype = map_email_types[itype]
@@ -130,10 +131,10 @@ class Import(object):
         params_types = card.photo.params.get("TYPE", [])
         itype = self._get_params_type(params_types, map_image_types)
         if itype is None:
-          print("Error: Not supported photo type (%s %s): '%s'" % (givenName, familyName, params_types))
+          logger.error("Not supported photo type (%s %s): '%s'" % (givenName, familyName, params_types))
           continue
         if card.photo.encoding_param.lower() != "b":
-          print("Error: Unknown photo encoding (%s %s): '%s'" % (givenName, familyName, card.photo.encoding_param.lower()))
+          logger.error("Unknown photo encoding (%s %s): '%s'" % (givenName, familyName, card.photo.encoding_param.lower()))
           continue
 
         if not os.path.exists(picture_path):
@@ -161,10 +162,10 @@ class Import(object):
         max_size = (128, 128)
         width, height = img.size
         if width != height:
-          print("Warning: Photo not square (%s %s %s): make it square with %s" % (givenName, familyName, img.size, max_size))
+          logger.warn("Photo not square (%s %s %s): make it square with %s" % (givenName, familyName, img.size, max_size))
           img = ImageOps.fit(img, max_size, Image.BICUBIC)
         elif img.size > max_size:
-          print("Warning: Photo too big (%s %s %s): resize to %s" % (givenName, familyName, img.size, max_size))
+          logger.warn("Photo too big (%s %s %s): resize to %s" % (givenName, familyName, img.size, max_size))
           img = img.resize(max_size, Image.BICUBIC)
 
         # remove alpha channel if there
