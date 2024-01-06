@@ -24,6 +24,7 @@ import urllib.request
 from datetime import datetime
 
 # fritzbox
+sys.path.append("..")
 import fritzbox.phonebook
 import fritzbox.access
 

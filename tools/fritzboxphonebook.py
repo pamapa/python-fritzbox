@@ -23,6 +23,7 @@ import sys
 import argparse
 
 # fritzbox modules
+sys.path.append("..")
 import fritzbox.phonebook
 import fritzbox.access
 import fritzbox.CSV
