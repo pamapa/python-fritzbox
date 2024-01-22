@@ -16,6 +16,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #
 
+import logging
 from ldif import LDIFParser
 
 # fritzbox
@@ -23,22 +24,22 @@ import fritzbox.phonebook
 
 
 class ParseGroups(LDIFParser):
-  def __init__(self, infile, vipGroupArray, debug=False):
+  def __init__(self, infile, vipGroupArray, logger: logging.Logger):
     LDIFParser.__init__(self, infile)
     self.vipGroupDict = {}
     for g in vipGroupArray:
       self.vipGroupDict[g] = []
-    self._debug = debug
+    self._logger = logger
 
   def _handle(self, dn, entry):
-    #debug(entry)
+    #self._logger.debug(entry)
     cn = self._get_value(entry, "cn")
     oc = entry["objectclass"]
     if cn and len(oc) == 2 and oc[0] == "top" and oc[1] == "groupOfNames":
-      #debug(cn)      
+      #self._logger.debug(cn)
       if cn in self.vipGroupDict:
         for m in entry["member"]:
-          #debug(m)
+          #self._logger.debug(m)
           self.vipGroupDict[cn].append(m)
 
   def _get_value(self, entry, name):
@@ -46,15 +47,14 @@ class ParseGroups(LDIFParser):
 
 
 class ParsePersons(LDIFParser):
-  def __init__(self, infile, vipGroupDict, debug=False):
+  def __init__(self, infile, vipGroupDict, logger: logging.Logger):
       LDIFParser.__init__(self, infile)
       self.phoneBook = fritzbox.phonebook.Phonebook()
       self._vipGroupDict = vipGroupDict
-      self._debug = debug
+      self._logger = logger
 
   def handle(self, dn, entry):
-    if self._debug:
-      print("entry: %s" % entry)
+    self._logger.debug("entry: %s" % entry)
     cn = self._get_value(entry, "cn")
 
     category = self._get_category(entry, cn)
@@ -120,14 +120,14 @@ class ParsePersons(LDIFParser):
 
 
 class Import(object):
-  def get_books(self, filename, vipGroupArray, debug=False):
+  def get_books(self, filename, vipGroupArray, logger: logging.Logger=logging.getLogger()):
     # parse groups
-    parser = ParseGroups(open(filename, "rb"), vipGroupArray, debug=debug)
+    parser = ParseGroups(open(filename, "rb"), vipGroupArray, logger)
     parser.parse()
     vipGroupDict = parser.vipGroupDict
 
     # parse persons
-    parser = ParsePersons(open(filename, "rb"), vipGroupDict, debug)
+    parser = ParsePersons(open(filename, "rb"), vipGroupDict, logger)
     parser.parse()
     phoneBook = parser.phoneBook
     

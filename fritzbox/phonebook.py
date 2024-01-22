@@ -1,5 +1,5 @@
 # python-fritzbox - Automate the Fritz!Box with python
-# Copyright (C) 2015-2022 Patrick Ammann <pammann@gmx.net>
+# Copyright (C) 2015-2024 Patrick Ammann <pammann@gmx.net>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -22,8 +22,9 @@ import tempfile
 import xml.etree.ElementTree as ET
 from xml.dom.minidom import parseString
 
-# fritzbox
+# fritzbox modules
 import fritzbox.multipart
+
 
 class PhonebookException(Exception):
   pass
@@ -93,7 +94,7 @@ class Telephony(object):
           found = True
           break
       if found: break
-          
+
   def getXML(self):
     xml = ET.Element("telephony")
     for ntype in self.numberDict:
