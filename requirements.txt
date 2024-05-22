@@ -3,6 +3,6 @@ fritzconnection==1.13.2
 lxml==5.0.0
 pillow==10.3.0
 python-ldap==3.4.4
-requests==2.31.0
+requests==2.32.0
 vobject==0.9.6.1
 
