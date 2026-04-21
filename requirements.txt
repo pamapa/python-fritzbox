@@ -1,6 +1,6 @@
 beautifulsoup4==4.12.2
 fritzconnection==1.13.2
-lxml==5.0.0
+lxml==6.1.0
 pillow==10.3.0
 python-ldap==3.4.5
 requests==2.32.4
